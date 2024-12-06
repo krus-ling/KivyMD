@@ -1,0 +1,57 @@
+ScreenManager:
+    Screen1:
+    Screen2:
+
+<Screen1>:
+    name: "welcome"
+    MDScreen:
+        md_bg_color: self.theme_cls.backgroundColor
+
+        MDBoxLayout:
+            orientation: "vertical"
+            pos_hint: {"center_x": .5, "center_y": .62}
+            size_hint: .9, .55
+
+            FitImage:
+                source: "main.jpg"
+
+        MDLabel:
+            text: "Добро пожаловать!"
+            halign: "center"
+            pos_hint: {"center_x": .5, "center_y": .36}
+            font_style: "Title"
+            theme_font_name: "Custom"
+            font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+
+        MDButton:
+            style: "elevated"
+            pos_hint: {"center_x": .5, "center_y": .2}
+            theme_bg_color: "Custom"
+            md_bg_color: "#AEC2EC"
+            theme_width: "Custom"
+            size_hint_x: .55
+            height: "48dp"
+            on_press: root.manager.current="main"
+
+            MDButtonText:
+                text: "Начнем"
+                pos_hint: {"center_x": .5, "center_y": .5}
+                font_style: "Title"
+                theme_text_color: "Custom"
+                text_color: "white"
+                shadow_radius: 0, 0, 0, 0.25
+                theme_font_name: "Custom"
+                font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+
+
+
+<Screen2>:
+    name: "main"
+    MDScreen:
+        md_bg_color: self.theme_cls.backgroundColor
+
+        MDLabel:
+            text: "Main Page"
+            halign: "center"
+            pos_hint: {"center_x": .5, "center_y": .5}
+            font_style: "Display"
