@@ -1,57 +1,123 @@
-ScreenManager:
-    Screen1:
-    Screen2:
+MDScreenManager:
+    id: screen_manager
 
-<Screen1>:
-    name: "welcome"
+    WelcomeScreen:
+        name: "welcome"
+
+    MainScreen:
+        name: "main"
+
+<WelcomeScreen>:
+
     MDScreen:
-        md_bg_color: self.theme_cls.backgroundColor
 
-        MDBoxLayout:
-            orientation: "vertical"
-            pos_hint: {"center_x": .5, "center_y": .62}
-            size_hint: .9, .55
+        MDFloatLayout:
+            orientation: 'vertical'
+            md_bg_color: 1, 1, 1, 1
 
-            FitImage:
-                source: "main.jpg"
 
-        MDLabel:
-            text: "Добро пожаловать!"
-            halign: "center"
-            pos_hint: {"center_x": .5, "center_y": .36}
-            font_style: "Title"
-            theme_font_name: "Custom"
-            font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+            MDCard:
+                orientation: "vertical"
+                md_bg_color: 1, 1, 1, 1
+                pos_hint: {"center_x": .5, "center_y": .62}
+                size_hint: 1, .66
 
-        MDButton:
-            style: "elevated"
-            pos_hint: {"center_x": .5, "center_y": .2}
-            theme_bg_color: "Custom"
-            md_bg_color: "#AEC2EC"
-            theme_width: "Custom"
-            size_hint_x: .55
-            height: "48dp"
-            on_press: root.manager.current="main"
+                FitImage:
+                    source: "assets/img/main.jpg"
 
-            MDButtonText:
-                text: "Начнем"
-                pos_hint: {"center_x": .5, "center_y": .5}
-                font_style: "Title"
-                theme_text_color: "Custom"
-                text_color: "white"
-                shadow_radius: 0, 0, 0, 0.25
+            MDLabel:
+                text: "Добро пожаловать!"
+                halign: "center"
+                font_style: "H5"
                 theme_font_name: "Custom"
+                font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+                pos_hint: {"center_x": .5, "center_y": .34}
+
+
+            MDFillRoundFlatButton:
+                text: "Начнем"
+                font_style: "H5"
                 font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+                size_hint: .55, .05
+                pos_hint: {'center_x': .5, 'center_y': .2}
+                theme_bg_color: "Custom"
+                md_bg_color: "#AEC2EC"
+                on_release: root.manager.current = "main"
 
 
+<DrawerClickableItem@MDNavigationDrawerItem>
+    focus_color: "#e7e4c0"
+    text_color: "#4a4939"
+    icon_color: "#4a4939"
+    ripple_color: "#c5bdd2"
+    selected_color: "#0c6c4d"
 
-<Screen2>:
-    name: "main"
+
+<DrawerLabelItem@MDNavigationDrawerItem>
+    text_color: "#4a4939"
+    icon_color: "#4a4939"
+    focus_behavior: False
+    selected_color: "#4a4939"
+    _no_ripple_effect: True
+
+
+<MainScreen>:
+
     MDScreen:
-        md_bg_color: self.theme_cls.backgroundColor
 
-        MDLabel:
-            text: "Main Page"
-            halign: "center"
-            pos_hint: {"center_x": .5, "center_y": .5}
-            font_style: "Display"
+        MDNavigationLayout:
+
+            MDScreenManager:
+
+                MDScreen:
+
+                    MDRaisedButton:
+                        text: "Open Drawer"
+                        icon: "filter-menu"
+                        pos_hint: {"center_x": .5, "center_y": .5}
+                        on_release: nav_drawer.set_state("toggle")
+
+            MDNavigationDrawer:
+                id: nav_drawer
+                radius: (0, 16, 16, 0)
+
+                MDNavigationDrawerMenu:
+
+                    DrawerClickableItem:
+                        text: "Анжелика"
+
+                    DrawerClickableItem:
+                        text: "ANGELA@mail.com"
+
+
+        MDBottomNavigation:
+
+            MDBottomNavigationItem:
+                name: 'screen 1'
+                # text: 'Mail'
+                icon: 'file-document-outline'
+
+                MDLabel:
+                    text: 'История'
+                    halign: 'center'
+                    font_style: "H1"
+
+            MDBottomNavigationItem:
+                name: 'screen 2'
+                # text: 'Twitter'
+                icon: 'microphone-outline'
+
+                MDLabel:
+                    text: 'Запись'
+                    halign: 'center'
+                    font_style: "H1"
+
+            MDBottomNavigationItem:
+                name: 'screen 3'
+                # text: 'Twitter'
+                icon: 'chat-outline'
+
+                MDLabel:
+                    text: 'Чат'
+                    halign: 'center'
+                    font_style: "H1"
