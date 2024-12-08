@@ -4,7 +4,7 @@ from kivy.core.window import Window
 from kivymd.uix.screen import MDScreen
 
 
-Window.size = (393, 852)
+# Window.size = (393, 852)
 
 
 class WelcomeScreen(MDScreen):
@@ -12,7 +12,9 @@ class WelcomeScreen(MDScreen):
 
 
 class MainScreen(MDScreen):
-    pass
+    def on_enter(self):
+        # Устанавливаем активную вкладку "screen 2"
+        self.ids.bottom_nav.switch_tab("screen 2")
 
 KV = '''
 <DrawerClickableItem@MDNavigationDrawerItem>
@@ -20,14 +22,17 @@ KV = '''
     text_color: "#4a4939"
     icon_color: "#4a4939"
     ripple_color: "#c5bdd2"
-    selected_color: "#406AAE"
 
 
 <DrawerLabelItem@MDNavigationDrawerItem>
     text_color: "#000000"
-    icon_color: "#000000"
+    icon_color: "#97ACD1"
     focus_behavior: False
-    selected_color: "#4a4939"
+    _no_ripple_effect: True
+
+<MDBottomNavigation@MDBottomNavigationItem>
+    icon_color: "#97ACD1"
+    focus_behavior: False
     _no_ripple_effect: True
     
 
@@ -67,6 +72,7 @@ KV = '''
                 theme_bg_color: "Custom"
                 md_bg_color: "#AEC2EC"
                 on_release: root.manager.current = "main"
+                elevation_levels: dp(12)
 
 
 MDScreen:
@@ -86,10 +92,13 @@ MDScreen:
                 
                 # Навигация снизу
                 MDBottomNavigation:
+                    id: bottom_nav
+                    selected_color_background: 0, 0, 0, 0
+                    text_color_active: "#13397D"
+                    text_color_normal: "#97ACD1"
     
                     MDBottomNavigationItem:
                         name: 'screen 1'
-                        # text: 'Mail'
                         icon: 'file-document-outline'
             
                         MDLabel:
@@ -99,8 +108,8 @@ MDScreen:
             
                     MDBottomNavigationItem:
                         name: 'screen 2'
-                        # text: 'Twitter'
                         icon: 'microphone-outline'
+                        
             
                         MDLabel:
                             text: 'Запись'
@@ -109,18 +118,19 @@ MDScreen:
             
                     MDBottomNavigationItem:
                         name: 'screen 3'
-                        # text: 'Twitter'
                         icon: 'chat-outline'
             
                         MDLabel:
                             text: 'Чат'
                             halign: 'center'
                             font_style: "H1"
-                # Иконка меню            
+                            
+                # Иконка меню
                 MDIconButton:
                     icon: "assets/img/menu.png"
                     style: "standard"
                     pos_hint: {"center_x": .07, "center_y": .96}
+                    focus_color: "#97ACD1"
                     on_release: nav_drawer.set_state("toggle")
             
             # Экран настроек
@@ -131,6 +141,12 @@ MDScreen:
                     text: 'Настройки'
                     halign: 'center'
                     font_style: "H2"
+                
+                MDIconButton:
+                    icon: "arrow-left"
+                    style: "standard"
+                    pos_hint: {"center_x": .07, "center_y": .96}
+                    on_release: screen_manager.current = "main"
                     
             # Экран Личного кабинета
             MDScreen:
@@ -140,11 +156,19 @@ MDScreen:
                     text: 'Личный кабинет'
                     halign: 'center'
                     font_style: "H2"
+                
+                MDIconButton:
+                    icon: "arrow-left"
+                    style: "standard"
+                    pos_hint: {"center_x": .07, "center_y": .96}
+                    on_release: screen_manager.current = "main"
                     
         # Боковая панель
         MDNavigationDrawer:
             id: nav_drawer
             radius: (0, 16, 16, 0)
+            panel_color: "#97ACD1"
+            
 
             MDNavigationDrawerMenu:
 
