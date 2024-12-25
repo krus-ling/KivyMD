@@ -4,22 +4,31 @@ from kivy.lang import Builder
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 
-# Window.size = (393, 852)
+Window.size = (393, 852)
 
 
 class WelcomeScreen(MDScreen):
     pass
 
 
-class MainScreen(MDScreen):
-    pass
-
-
-class Example(MDApp):
+class App(MDApp):
 
     def build(self):
 
-        return Builder.load_file("test.kv")
+        self.theme_cls.theme_style = "Light"
+
+        return Builder.load_file("main.kv")
 
 
-Example().run()
+    def on_switch_active(self, instance, value):
+        """
+        Меняет тему на темную или светлую в зависимости от состояния переключателя.
+        """
+        if value:  # Если переключатель активен, включаем темную тему
+            self.theme_cls.theme_style = "Dark"
+        else:  # Если переключатель не активен, включаем светлую тему
+            self.theme_cls.theme_style = "Light"
+
+
+if __name__ == '__main__':
+    App().run()

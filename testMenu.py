@@ -4,17 +4,12 @@ from kivy.core.window import Window
 from kivymd.uix.screen import MDScreen
 
 
-# Window.size = (393, 852)
+Window.size = (393, 852)
 
 
 class WelcomeScreen(MDScreen):
     pass
 
-
-class MainScreen(MDScreen):
-    def on_enter(self):
-        # Устанавливаем активную вкладку "screen 2"
-        self.ids.bottom_nav.switch_tab("screen 2")
 
 KV = '''
 <DrawerClickableItem@MDNavigationDrawerItem>
@@ -30,11 +25,6 @@ KV = '''
     focus_behavior: False
     _no_ripple_effect: True
 
-<MDBottomNavigation@MDBottomNavigationItem>
-    icon_color: "#97ACD1"
-    focus_behavior: False
-    _no_ripple_effect: True
-    
 
 <WelcomeScreen>:
 
@@ -96,15 +86,6 @@ MDScreen:
                     selected_color_background: 0, 0, 0, 0
                     text_color_active: "#13397D"
                     text_color_normal: "#97ACD1"
-    
-                    MDBottomNavigationItem:
-                        name: 'screen 1'
-                        icon: 'file-document-outline'
-            
-                        MDLabel:
-                            text: 'История'
-                            halign: 'center'
-                            font_style: "H1"
             
                     MDBottomNavigationItem:
                         name: 'screen 2'
@@ -127,7 +108,7 @@ MDScreen:
                             
                 # Иконка меню
                 MDIconButton:
-                    icon: "assets/img/menu.png"
+                    icon: "menu"
                     style: "standard"
                     pos_hint: {"center_x": .07, "center_y": .96}
                     focus_color: "#97ACD1"
@@ -138,9 +119,14 @@ MDScreen:
                 name: "setting"
                 
                 MDLabel:
-                    text: 'Настройки'
+                    text: 'Темная тема'
                     halign: 'center'
-                    font_style: "H2"
+                    font_style: "H4"
+                    pos_hint: {"center_x": .38, "center_y": .51}
+                
+                MDSwitch:
+                    on_active: app.on_switch_active(*args)
+                    pos_hint: {"center_x": .75, "center_y": .5}
                 
                 MDIconButton:
                     icon: "arrow-left"
@@ -169,33 +155,74 @@ MDScreen:
             radius: (0, 16, 16, 0)
             panel_color: "#97ACD1"
             
-
-            MDNavigationDrawerMenu:
-
-                DrawerClickableItem:
-                    text: "Личный кабинет"
-                    icon: "account-circle-outline"
-                    on_release:
-                        screen_manager.current = "account"
-                        nav_drawer.set_state("close")
-
-                DrawerClickableItem:
-                    text: "Настройки"
-                    icon: "cog-outline"
-                    on_release:
-                        screen_manager.current = "setting"
-                        nav_drawer.set_state("close")
-                        
-                DrawerClickableItem:
-                    text: "Выход"
-                    icon: "exit-to-app"
-                    on_release: app.stop()
+            MDBoxLayout:
+                orientation: "vertical"
+                padding: "8dp"
+                spacing: "100dp"
+                size_hint: 1, 1
+            
+                MDNavigationDrawerMenu:
+                    MDRoundFlatIconButton:
+                        id: round_flat_icon_button
+                        text: "Личный кабинет"
+                        icon: "account-circle-outline"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "24sp"
+                        padding: "20dp"
+                        on_release:
+                            screen_manager.current = "account"
+                            nav_drawer.set_state("close")
+    
+                    MDRoundFlatIconButton:
+                        text: "Настройки"
+                        icon: "cog-outline"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "24sp"
+                        padding: "20dp"
+                        on_release:
+                            screen_manager.current = "setting"
+                            nav_drawer.set_state("close")
+                            
+                    MDRoundFlatIconButton:
+                        text: "Выход"
+                        icon: "exit-to-app"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "24sp"
+                        padding: "20dp"
+                        on_release: app.stop()
 '''
 
 
 class Example(MDApp):
+
+
     def build(self):
+        self.theme_cls.theme_style = "Light"
+
         return Builder.load_string(KV)
 
 
-Example().run()
+    def on_switch_active(self, instance, value):
+        """
+        Меняет тему на темную или светлую в зависимости от состояния переключателя.
+        """
+        if value:  # Если переключатель активен, включаем темную тему
+            self.theme_cls.theme_style = "Dark"
+        else:  # Если переключатель не активен, включаем светлую тему
+            self.theme_cls.theme_style = "Light"
+
+
+if __name__ == "__main__":
+    Example().run()
