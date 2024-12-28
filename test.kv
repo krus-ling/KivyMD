@@ -1,19 +1,179 @@
-MDScreenManager:
-    id: screen_manager
+# Авторизация
+<LoginScreen>:
 
-    WelcomeScreen:
-        name: "welcome"
+#    MDCard:
+#        orientation: "vertical"
+#        md_bg_color: 1, 1, 1, 0
+#        size_hint: .7, 1
+#
+#        FitImage:
+#            source: "assets/img/auth_bg.png"
+#            pos_hint: {"center_x": .93}
 
-    MainScreen:
-        name: "main"
 
+
+    MDFloatLayout:
+
+        MDIconButton:
+            icon: "arrow-left"
+            style: "standard"
+            pos_hint: {"center_x": .07, "center_y": .96}
+            on_release: root.manager.current = "welcome"
+
+        MDLabel:
+            text: "Авторизация"
+            color: "#6A7895"
+            theme_font_name: "Custom"
+            font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+            pos_hint: {"center_x": 0.5, "center_y": 0.83}
+            halign: "center"
+            font_style: "H5"
+
+        MDFillRoundFlatButton:
+            text: "Войти"
+            font_style: "H5"
+            font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+            size_hint: .55, .05
+            pos_hint: {"center_x": 0.5, "center_y": 0.3}
+            theme_bg_color: "Custom"
+            md_bg_color: "#AEC2EC"
+            on_release: app.login_user(identifier.text, password.text)
+
+        MDRoundFlatButton:
+            text: "Зарегистрироваться"
+            line_color: [1, 1, 1, 0]
+            text_color: "#97ACD1"
+            pos_hint: {"center_x": 0.5, "center_y": 0.24}
+            on_release: root.manager.current = "register"
+
+        MDBoxLayout:
+            orientation: "vertical"
+            size_hint: 0.9, .2
+            height: self.minimum_height
+            pos_hint: {"center_x": 0.55, "center_y": 0.65}
+            spacing: dp(20)
+            padding: dp(10)
+
+            MDTextField:
+                id: identifier
+                hint_text: "*Почта или логин"
+
+                color_mode: 'Custom'
+                line_color_focus: "#6A7895"
+
+
+            MDBoxLayout:
+                orientation: "horizontal"
+                size_hint_y: .4
+
+
+                MDTextField:
+                    id: password
+                    hint_text: "*Пароль"
+                    password: True
+                    size_hint_x: 0.8
+                    line_color_focus: "#6A7895"
+
+                MDIconButton:
+                    id: toggle_password_auth
+                    icon: 'eye-off'
+                    size_hint_x: 0.2
+                    on_release: app.toggle_password_visibility_auth(password, toggle_password_auth)
+
+
+# Регистрация
+<RegisterScreen>:
+
+    MDFloatLayout:
+
+#        MDCard:
+#            orientation: "vertical"
+#            md_bg_color: 1, 1, 1, 0
+#            size_hint: .7, 1
+#
+#            FitImage:
+#                source: "assets/img/auth_bg.png"
+#                pos_hint: {"center_x": .93}
+
+        MDLabel:
+            text: "Регистрация"
+            color: "#6A7895"
+            theme_font_name: "Custom"
+            font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+            pos_hint: {"center_x": 0.5, "center_y": 0.83}
+            halign: "center"
+            font_style: "H5"
+
+        MDFillRoundFlatButton:
+            text: "Зарегистрироваться"
+            font_style: "Subtitle1"
+            font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+            size_hint: .55, .05
+            pos_hint: {"center_x": 0.5, "center_y": 0.25}
+            theme_bg_color: "Custom"
+            md_bg_color: "#AEC2EC"
+            on_release: app.register_user(reg_username.text, reg_email.text, reg_password.text, password_repeat.text)
+
+        MDRoundFlatButton:
+            text: "Назад ко входу"
+            pos_hint: {"center_x": 0.5, "center_y": 0.19}
+            line_color: [1, 1, 1, 0]
+            text_color: "#97ACD1"
+            on_release: root.manager.current = "login"
+
+
+        MDBoxLayout:
+            orientation: "vertical"
+            size_hint: 0.9, .4
+            height: self.minimum_height
+            pos_hint: {"center_x": 0.55, "center_y": 0.55}
+            spacing: dp(20)
+            padding: dp(10)
+
+            MDTextField:
+                id: reg_username
+                hint_text: "*Логин"
+                line_color_focus: "#6A7895"
+                max_text_length: 20
+                size_hint_x: 0.8
+            MDTextField:
+                id: reg_email
+                hint_text: "*Почта"
+                line_color_focus: "#6A7895"
+                size_hint_x: 0.8
+
+            MDBoxLayout:
+                orientation: "horizontal"
+                size_hint_y: .4
+
+                MDTextField:
+                    id: reg_password
+                    hint_text: "*Пароль"
+                    password: True
+                    line_color_focus: "#6A7895"
+                    size_hint_x: 0.8
+
+                MDIconButton:
+                    id: toggle_password_reg
+                    icon: 'eye-off'
+                    size_hint_x: 0.2
+                    on_release: app.toggle_password_visibility_reg(reg_password, password_repeat, toggle_password_reg)
+
+            MDTextField:
+                id: password_repeat
+                hint_text: "*Повторите пароль"
+                password: True
+                line_color_focus: "#6A7895"
+                size_hint_x: 0.8
+
+
+# Приветственный экран
 <WelcomeScreen>:
 
     MDScreen:
 
         MDFloatLayout:
             orientation: 'vertical'
-            md_bg_color: 1, 1, 1, 1
 
 
             MDCard:
@@ -42,82 +202,191 @@ MDScreenManager:
                 pos_hint: {'center_x': .5, 'center_y': .2}
                 theme_bg_color: "Custom"
                 md_bg_color: "#AEC2EC"
-                on_release: root.manager.current = "main"
+                on_release: root.manager.current = "login"
+                elevation_levels: dp(12)
 
 
-<DrawerClickableItem@MDNavigationDrawerItem>
-    focus_color: "#e7e4c0"
-    text_color: "#4a4939"
-    icon_color: "#4a4939"
-    ripple_color: "#c5bdd2"
-    selected_color: "#0c6c4d"
+# Настройки
+<SettingsScreen>:
+
+    MDLabel:
+        text: 'Темная тема'
+        halign: 'center'
+        font_style: "H4"
+        pos_hint: {"center_x": .38, "center_y": .513}
+
+    MDSwitch:
+        on_active: app.on_switch_active(*args)
+        pos_hint: {"center_x": .75, "center_y": .5}
+
+    MDIconButton:
+        icon: "arrow-left"
+        style: "standard"
+        pos_hint: {"center_x": .07, "center_y": .96}
+        on_release: root.manager.current = "main"
 
 
-<DrawerLabelItem@MDNavigationDrawerItem>
-    text_color: "#4a4939"
-    icon_color: "#4a4939"
-    focus_behavior: False
-    selected_color: "#4a4939"
-    _no_ripple_effect: True
+<AccountScreen>:
+
+    MDFloatLayout:
+
+        MDCard:
+            orientation: "vertical"
+            size_hint: None, None
+            size: dp(180), dp(180)
+            pos_hint: {"center_x": 0.5, "center_y": .8}
+            radius: [dp(100),]
 
 
-<MainScreen>:
+            FitImage:
+                source: "assets/img/account.png"
+                radius: [dp(100),]
+                md_bg_color: 1, 1, 1, 0
 
-    MDScreen:
 
-        MDNavigationLayout:
+    MDLabel:
+        id: username_label
+        text: '{app.username}'
+        halign: "center"
+        font_style: "H5"
+        theme_font_name: "Custom"
+        font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+        theme_text_color: "Custom"
+        text_color: "#406AAE"
+        pos_hint: {"center_x": .5, "center_y": .65}
 
-            MDScreenManager:
+    MDLabel:
+        id: useremail_label
+        text: '{app.username}'
+        halign: "center"
+        font_style: "H5"
+        theme_font_name: "Custom"
+        font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+        theme_text_color: "Custom"
+        text_color: "#406AAE"
+        pos_hint: {"center_x": .5, "center_y": .57}
 
-                MDScreen:
+    MDIconButton:
+        icon: "arrow-left"
+        style: "standard"
+        pos_hint: {"center_x": .07, "center_y": .96}
+        on_release: root.manager.current = "main"
 
-                    MDRaisedButton:
-                        text: "Open Drawer"
-                        icon: "filter-menu"
-                        pos_hint: {"center_x": .5, "center_y": .5}
-                        on_release: nav_drawer.set_state("toggle")
 
-            MDNavigationDrawer:
-                id: nav_drawer
-                radius: (0, 16, 16, 0)
+MDScreen:
+
+    MDNavigationLayout:
+
+        MDScreenManager:
+            id: screen_manager
+
+            # Приветственный экран
+            WelcomeScreen:
+                name: "welcome"
+
+            LoginScreen:
+                name: "login"
+
+            RegisterScreen:
+                name: "register"
+
+            # Главный экран
+            MDScreen:
+                name: "main"
+
+                # Навигация снизу
+                MDBottomNavigation:
+                    id: bottom_nav
+                    selected_color_background: 0, 0, 0, 0
+                    text_color_active: "#13397D"
+                    text_color_normal: "#97ACD1"
+
+                    MDBottomNavigationItem:
+                        name: 'screen 2'
+                        icon: 'microphone-outline'
+
+                        MDLabel:
+                            text: 'Запись'
+                            halign: 'center'
+                            font_style: "H1"
+
+                    MDBottomNavigationItem:
+                        name: 'screen 3'
+                        icon: 'chat-outline'
+
+                        MDLabel:
+                            text: 'Чат'
+                            halign: 'center'
+                            font_style: "H1"
+
+                # Иконка меню
+                MDIconButton:
+                    icon: "menu"
+                    style: "standard"
+                    pos_hint: {"center_x": .07, "center_y": .96}
+                    focus_color: "#97ACD1"
+                    on_release: nav_drawer.set_state("toggle")
+
+            # Экран настроек
+            SettingsScreen:
+                name: "setting"
+
+            # Экран Личного кабинета Авторизованного
+            AccountScreen:
+                name: "account"
+
+
+        # Боковая панель
+        MDNavigationDrawer:
+            id: nav_drawer
+            radius: (0, 16, 16, 0)
+            panel_color: "#97ACD1"
+            md_bg_color: 1, 1, 1, 1
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: "100dp"
+                size_hint: 1, 1
 
                 MDNavigationDrawerMenu:
 
-                    DrawerClickableItem:
-                        text: "Анжелика"
+                    MDRoundFlatIconButton:
+                        id: round_flat_icon_button
+                        text: "Личный кабинет"
+                        icon: "account-circle-outline"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "22sp"
+                        padding: "20dp"
+                        on_release:
+                            screen_manager.current = "account"
+                            nav_drawer.set_state("close")
 
-                    DrawerClickableItem:
-                        text: "ANGELA@mail.com"
+                    MDRoundFlatIconButton:
+                        text: "Настройки"
+                        icon: "cog-outline"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "22sp"
+                        padding: "20dp"
+                        on_release:
+                            screen_manager.current = "setting"
+                            nav_drawer.set_state("close")
 
-
-        MDBottomNavigation:
-
-            MDBottomNavigationItem:
-                name: 'screen 1'
-                # text: 'Mail'
-                icon: 'file-document-outline'
-
-                MDLabel:
-                    text: 'История'
-                    halign: 'center'
-                    font_style: "H1"
-
-            MDBottomNavigationItem:
-                name: 'screen 2'
-                # text: 'Twitter'
-                icon: 'microphone-outline'
-
-                MDLabel:
-                    text: 'Запись'
-                    halign: 'center'
-                    font_style: "H1"
-
-            MDBottomNavigationItem:
-                name: 'screen 3'
-                # text: 'Twitter'
-                icon: 'chat-outline'
-
-                MDLabel:
-                    text: 'Чат'
-                    halign: 'center'
-                    font_style: "H1"
+                    MDRoundFlatIconButton:
+                        text: "Выход"
+                        icon: "exit-to-app"
+                        size_hint: .55, .5
+                        line_color: [0, 0, 0, 0]
+                        halign: "left"
+                        text_color: "#97ACD1"
+                        icon_color: "#406AAE"
+                        font_size: "22sp"
+                        padding: "20dp"
+                        on_release: app.stop()
