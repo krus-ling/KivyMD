@@ -1,10 +1,10 @@
 import re
 import sqlite3
 
+
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
-
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -31,6 +31,7 @@ class SettingsScreen(MDScreen):
 
 class AccountScreen(MDScreen):
     pass
+
 
 class App(MDApp):
 

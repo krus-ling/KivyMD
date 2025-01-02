@@ -1,103 +1,164 @@
+import os
 import pyaudio
 import wave
 from kivy.lang import Builder
 from kivymd.app import MDApp
-from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.button import MDRoundFlatButton
 from kivy.clock import Clock
-import pygame
-
-KV = '''
-BoxLayout:
-    orientation: 'vertical'
-    size: root.width, root.height
-
-    MDLabel:
-        text: "Нажмите кнопку для записи"
-        halign: 'center'
-        font_style: 'H5'
-
-    MDRaisedButton:
-        text: "Начать запись"
-        size_hint: None, None
-        size: "200dp", "50dp"
-        pos_hint: {"center_x": 0.5}
-        on_release: app.start_recording()
-
-    MDRaisedButton:
-        text: "Остановить запись"
-        size_hint: None, None
-        size: "200dp", "50dp"
-        pos_hint: {"center_x": 0.5}
-        on_release: app.stop_recording()
-
-    MDRaisedButton:
-        text: "Прослушать запись"
-        size_hint: None, None
-        size: "200dp", "50dp"
-        pos_hint: {"center_x": 0.5}
-        on_release: app.play_audio()
-'''
+from kivy.core.audio import SoundLoader
+from threading import Event
 
 
-class AudioRecorderApp(MDApp):
-    def build(self):
-        return Builder.load_string(KV)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.p = pyaudio.PyAudio()
+class AudioRecorder:
+    def __init__(self):
+        self.audio = None
+        self.frames = []
         self.stream = None
-        self.frames = []
-        self.recording = False
+        self.file_path = "myrecording.wav"
+        self.audio_gate = Event()  # Синхронизация доступа
+        self.audio_gate.set()  # Разрешаем доступ сразу
 
-    def start_recording(self):
-        """Начинает запись с микрофона."""
-        self.frames = []
-        self.stream = self.p.open(format=pyaudio.paInt16,
-                                  channels=1,
-                                  rate=44100,
-                                  input=True,
-                                  frames_per_buffer=1024)
-        print("Запись началась...")
-        self.recording = True
-        self.record_audio(0)
-
-    def record_audio(self, dt):
-        """Записывает данные с микрофона."""
-        if self.recording:
-            data = self.stream.read(1024)
-            self.frames.append(data)
-            Clock.schedule_once(self.record_audio, 0.1)
-
-    def stop_recording(self):
-        """Останавливает запись."""
-        self.recording = False
-        self.stream.stop_stream()
-        self.stream.close()
-        self.save_audio()
-        print("Запись остановлена.")
-
-    def save_audio(self):
-        """Сохраняет записанное аудио в файл."""
-        with wave.open("recording.wav", 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(self.p.get_sample_size(pyaudio.paInt16))
-            wf.setframerate(44100)
-            wf.writeframes(b''.join(self.frames))
-        print("Аудиофайл сохранен как recording.wav")
-
-    def play_audio(self):
-        """Метод для прослушивания записи"""
-        pygame.mixer.init()  # Инициализация pygame для работы с аудио
-        pygame.mixer.music.load("recording.wav")  # Загружаем WAV файл
-        pygame.mixer.music.play()  # Проигрываем аудио
-        print("Играет аудио...")
-
-    def on_stop(self):
-        """Закрытие потока при завершении приложения."""
+    def reset_audio(self):
+        """Останавливает старые соединения и очищает данные перед началом новой записи."""
         if self.stream is not None:
+            self.stream.stop_stream()
             self.stream.close()
 
+        if self.audio is not None:
+            self.audio.terminate()
 
+        # Очищаем старые данные
+        self.frames = []
+        self.audio = pyaudio.PyAudio()
+
+        # Удаляем старый файл записи, если он существует
+        if os.path.exists(self.file_path):
+            try:
+                os.remove(self.file_path)
+                print(f"Удален старый файл: {self.file_path}")
+            except Exception as e:
+                print(f"Не удалось удалить файл: {e}")
+
+    def start_recording(self):
+        """Начинает запись с нуля, сбрасывая все старые данные и соединения"""
+        self.reset_audio()  # Сброс старых данных и потоков
+
+        self.audio_gate.wait()  # Блокируем доступ, если запись/воспроизведение идет
+        self.audio_gate.clear()  # Блокируем другие потоки
+
+        try:
+            self.stream = self.audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=44100,
+                input=True,
+                frames_per_buffer=1024
+            )
+            # Планируем чтение аудио
+            Clock.schedule_interval(self.record_chunk, 0)  # 0 - записываем бесконечно
+            print("Запись началась.")
+        except IOError as e:
+            print(f"Ошибка при открытии потока: {e}")
+
+    def stop_recording(self):
+        """Останавливает запись и сохраняет файл"""
+        Clock.unschedule(self.record_chunk)  # Прекращаем запись
+
+        if self.stream is not None:
+            self.stream.stop_stream()
+            self.stream.close()
+
+        self.audio.terminate()
+
+        # Сохраняем аудиофайл
+        try:
+            sound_file = wave.open(self.file_path, "wb")
+            sound_file.setnchannels(1)
+            sound_file.setsampwidth(self.audio.get_sample_size(pyaudio.paInt16))
+            sound_file.setframerate(44100)
+            sound_file.writeframes(b''.join(self.frames))
+            sound_file.close()
+            print(f"Запись сохранена в файл {self.file_path}")
+        except Exception as e:
+            print(f"Ошибка при сохранении файла: {e}")
+
+        self.audio_gate.set()  # Разрешаем доступ для других операций
+
+
+    def play_audio(self):
+        """Прослушиваем записанный файл"""
+        # Загружаем новый звук (обновляем объект SoundLoader)
+        self.sound = SoundLoader.load(self.file_path)
+
+        if self.sound:
+            # Если звук загружен, воспроизводим
+            self.sound.play()
+            print("Проигрывание записи началось.")
+        else:
+            print("Не удалось загрузить звук для воспроизведения.")
+
+    def record_chunk(self, dt):
+        """Читает данные с потока и добавляет в список"""
+        data = self.stream.read(1024)
+        self.frames.append(data)
+
+
+class AudioApp(MDApp):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.file_path = "myrecording.wav"
+        self.is_recording = False
+        self.recorder = AudioRecorder()
+        self.sound = None
+
+    def build(self):
+        return Builder.load_string(
+            '''
+MDScreen:
+
+    MDRoundFlatButton:
+        id: record_button
+        text: "Начать запись"
+        size_hint: .2, .1
+        pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        on_release: app.toggle_recording()
+
+    MDRoundFlatButton:
+        id: play_button
+        text: "Прослушать запись"
+        size_hint: .2, .1
+        pos_hint: {"center_x": 0.5, "center_y": 0.3}
+        on_release: app.play_audio()
+'''
+        )
+
+    def toggle_recording(self):
+        button = self.root.ids.record_button
+
+        if self.is_recording:
+            self.is_recording = False
+            button.text = "Начать запись"
+            # Останавливаем запись
+            self.recorder.stop_recording()
+        else:
+            self.is_recording = True
+            button.text = "Остановить запись"
+            # Начинаем запись
+            self.recorder.start_recording()
+
+    def play_audio(self):
+        """Прослушиваем записанный файл"""
+        # Загружаем новый звук (обновляем объект SoundLoader)
+        self.sound = SoundLoader.load(self.file_path)
+
+        if self.sound:
+            # Если звук загружен, воспроизводим
+            self.sound.play()
+            print("Проигрывание записи началось.")
+        else:
+            print("Не удалось загрузить звук для воспроизведения.")
+
+
+# Запуск приложения
 if __name__ == "__main__":
-    AudioRecorderApp().run()
+    AudioApp().run()

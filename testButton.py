@@ -1,52 +1,37 @@
 from kivy.lang import Builder
 
 from kivymd.app import MDApp
+from kivymd.uix.screen import MDScreen
 
 
-class Test(MDApp):
+class TestButton(MDApp):
 
     def build(self):
-        self.theme_cls.material_style = "M3"
+
         self.theme_cls.theme_style = "Dark"
+
+        self.is_recording = False  # Флаг, показывающий, записываем ли мы сейчас
+
         return Builder.load_string(
             '''
 MDScreen:
 
-    MDBottomNavigation:
-        #panel_color: "#eeeaea"
-        selected_color_background: "orange"
-        text_color_active: "lightgrey"
+    MDRoundFlatButton:
+        id: record_button
+        text: "Начать запись"
+        size_hint: .2, .1
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        on_release: app.toggle_recording()
+''')
 
-        MDBottomNavigationItem:
-            name: 'screen 1'
-            text: 'Mail'
-            icon: 'gmail'
-            badge_icon: "numeric-10"
+    def toggle_recording(self):
 
-            MDLabel:
-                text: 'Mail'
-                halign: 'center'
+        # Изменяем флаг записи
+        self.is_recording = not self.is_recording
 
-        MDBottomNavigationItem:
-            name: 'screen 2'
-            text: 'Twitter'
-            icon: 'twitter'
-            badge_icon: "numeric-5"
-
-            MDLabel:
-                text: 'Twitter'
-                halign: 'center'
-
-        MDBottomNavigationItem:
-            name: 'screen 3'
-            text: 'LinkedIN'
-            icon: 'linkedin'
-
-            MDLabel:
-                text: 'LinkedIN'
-                halign: 'center'
-'''
-        )
+        # Получаем ссылку на кнопку и меняем ее текст
+        button = self.root.ids.record_button
+        button.text = "Остановить запись" if self.is_recording else "Начать запись"
 
 
-Test().run()
+TestButton().run()

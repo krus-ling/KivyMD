@@ -35,7 +35,7 @@ class LKScreen(MDScreen):
     email = StringProperty("")
 
 
-class App(MDApp):
+class MyApp(MDApp):
 
     dialog = None
     password_visible = False  # Статус видимости пароля
@@ -149,4 +149,4 @@ class App(MDApp):
 
 
 if __name__ == '__main__':
-    App().run()
+    MyApp().run()
