@@ -1,5 +1,5 @@
 '''
-android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
 requirements = python3,
     kivy,
@@ -9,6 +9,8 @@ requirements = python3,
     asyncgui,
     asynckivy,
     jnius
+    mysql-connector-python,
+    python-dotenv
 '''
 
 import os
@@ -18,40 +20,34 @@ from jnius import autoclass
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.app import MDApp
-from kivymd.uix.floatlayout import MDFloatLayout
 
-Builder.load_string('''
-<AudioTool>
+# Загружаем интерфейс
+kv = '''
+MDFloatLayout:
+    orientation: "vertical"
 
-    MDFloatLayout:
-        orientation: "vertical"
-        
-        MDLabel:
-            id: display_label
-            text: 'Click on the button'
-            pos_hint: {"center_x": 0.5, "center_y": .8}
-            halign: "center"
-    
-        MDRoundFlatButton:
-            id: start_button
-            text: 'Start Recording'
-            on_release: root.startRecording_clock()
-            pos_hint: {"center_x": 0.5, "center_y": 0.6}
-    
-        MDRoundFlatButton:
-            id: stop_button
-            text: 'Stop Recording'
-            on_release: root.stopRecording()
-            disabled: True
-            pos_hint: {"center_x": 0.5, "center_y": 0.4}
-    
-        MDRoundFlatButton:
-            id: play_button
-            text: 'Play Recording'
-            on_release: root.playRecording()
-            disabled: True
-            pos_hint: {"center_x": 0.5, "center_y": 0.2}
-''')
+    MDLabel:
+        id: display_label
+        text: 'Нажми на кнопку'
+        pos_hint: {"center_x": 0.5, "center_y": .8}
+        halign: "center"
+        size_hint_x: .8
+
+    MDRoundFlatButton:
+        id: action_button
+        text: 'Начать запись'
+        on_release: app.toggleRecording()
+        pos_hint: {"center_x": 0.5, "center_y": 0.6}
+        size_hint_x: .5
+
+    MDRoundFlatButton:
+        id: play_button
+        text: 'Прослушать'
+        on_release: app.playRecording()
+        disabled: True
+        pos_hint: {"center_x": 0.5, "center_y": 0.2}
+        size_hint_x: .5
+'''
 
 
 class MyRecorder:
@@ -119,58 +115,50 @@ class MyPlayer:
         self.mPlayer.setOnCompletionListener(listener)
 
 
-
 class AudioApp(MDApp):
     def build(self):
         # Запрос разрешений при запуске приложения
-        request_permissions([
-            Permission.RECORD_AUDIO,
-            Permission.WRITE_EXTERNAL_STORAGE,
-            Permission.READ_EXTERNAL_STORAGE
-        ])
-        return AudioTool()
+        request_permissions([Permission.RECORD_AUDIO,
+                             Permission.WRITE_EXTERNAL_STORAGE,
+                             Permission.READ_EXTERNAL_STORAGE])
+        return Builder.load_string(kv)
 
-
-class AudioTool(MDFloatLayout):
-    def __init__(self, **kwargs):
-        super(AudioTool, self).__init__(**kwargs)
-
-        self.start_button = self.ids['start_button']
-        self.stop_button = self.ids['stop_button']
-        self.display_label = self.ids['display_label']
-        self.play_button = self.ids['play_button']
+    def on_start(self):
+        self.is_recording = False  # Флаг для отслеживания состояния записи
         self.player = None  # Объект MediaPlayer
 
+    def toggleRecording(self):
+        '''Toggle recording state'''
+        if self.is_recording:
+            self.stopRecording()
+        else:
+            self.startRecording_clock()
 
     def startRecording_clock(self):
+        Clock.schedule_once(self.startRecording)
 
-        self.start_button.disabled = True  # Prevents the user from clicking start again which may crash the program
-        self.stop_button.disabled = False
-        Clock.schedule_once(self.startRecording)  ## NEW start the recording
-
-    def startRecording(self, dt):  # NEW start the recorder
+    def startRecording(self, dt):
         self.r = MyRecorder()
         self.r.mRecorder.start()
-        self.play_button.disabled = True  # Отключаем кнопку во время записи
-        self.display_label.text = "Recording..."
+        self.is_recording = True
+        self.root.ids.action_button.text = 'Остановить запись'
+        self.root.ids.play_button.disabled = True  # Отключаем кнопку во время записи
+        self.root.ids.display_label.text = "Запись..."
 
     def stopRecording(self):
+        self.r.mRecorder.stop()
+        self.r.mRecorder.release()
 
-        self.r.mRecorder.stop()  # NEW RECORDER VID 6
-        self.r.mRecorder.release()  # NEW RECORDER VID 6
-
-        Clock.unschedule(self.startRecording)  # NEW stop the recording of audio VID 6
-        self.start_button.disabled = False
-        self.stop_button.disabled = True  # TUT 3
+        self.is_recording = False
+        self.root.ids.action_button.text = 'Начать запись'
+        self.root.ids.display_label.text = "Сообщение записано"
 
         # Активируем кнопку воспроизведения
-        self.play_button.disabled = False
-
-        self.display_label.text = "Recording completed"
+        self.root.ids.play_button.disabled = False
 
     def playRecording(self):
         if not self.player:
-            self.player = MyPlayer()  # Создаём объект MyPlayer
+            self.player = MyPlayer()
             self.player.set_data_source(self.r.get_output_file())  # Устанавливаем источник данных (путь к файлу)
             self.player.prepare()  # Подготавливаем для воспроизведения
         self.player.start()  # Запускаем воспроизведение
@@ -180,7 +168,7 @@ class AudioTool(MDFloatLayout):
 
     def onPlaybackComplete(self):
         '''Сбрасываем состояние после завершения воспроизведения'''
-        self.display_label.text = "Playback Finished!"
+        self.root.ids.display_label.text = "Запись прослушана!"
         self.player.release()
         self.player = None
 

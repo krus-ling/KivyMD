@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="users.db" uuid="af718e30-b85f-4054-a200-b1f925005d54">
-      <driver-ref>sqlite.xerial</driver-ref>
+    <data-source source="LOCAL" name="bpx0k1pfuco9ec1kulzu@bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com" uuid="0bfff6e0-fb5d-444f-a347-dfe6184bf326">
+      <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/users.db</jdbc-url>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com:3306/bpx0k1pfuco9ec1kulzu</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -10,13 +10,15 @@
 #            source: "assets/img/auth_bg.png"
 #            pos_hint: {"center_x": .93}
 
-    MDIconButton:
-        icon: "arrow-left"
-        style: "standard"
-        pos_hint: {"center_x": .07, "center_y": .96}
-        on_release: root.manager.current = "main"
+
 
     MDFloatLayout:
+
+        MDIconButton:
+            icon: "arrow-left"
+            style: "standard"
+            pos_hint: {"center_x": .07, "center_y": .96}
+            on_release: root.manager.current = "welcome"
 
         MDLabel:
             text: "Авторизация"
@@ -41,7 +43,7 @@
             text: "Зарегистрироваться"
             line_color: [1, 1, 1, 0]
             text_color: "#97ACD1"
-            pos_hint: {"center_x": 0.5, "center_y": 0.24}
+            pos_hint: {"center_x": 0.5, "center_y": 0.23}
             on_release: root.manager.current = "register"
 
         MDBoxLayout:
@@ -55,6 +57,7 @@
             MDTextField:
                 id: identifier
                 hint_text: "*Почта или логин"
+                size_hint_x: 0.8
 
                 color_mode: 'Custom'
                 line_color_focus: "#6A7895"
@@ -106,7 +109,7 @@
             text: "Зарегистрироваться"
             font_style: "Subtitle1"
             font_name: "assets/fonts/PTSansCaption-Regular.ttf"
-            size_hint: .55, .05
+            size_hint: .55, .052
             pos_hint: {"center_x": 0.5, "center_y": 0.25}
             theme_bg_color: "Custom"
             md_bg_color: "#AEC2EC"
@@ -114,7 +117,7 @@
 
         MDRoundFlatButton:
             text: "Назад ко входу"
-            pos_hint: {"center_x": 0.5, "center_y": 0.19}
+            pos_hint: {"center_x": 0.5, "center_y": 0.18}
             line_color: [1, 1, 1, 0]
             text_color: "#97ACD1"
             on_release: root.manager.current = "login"
@@ -122,11 +125,11 @@
 
         MDBoxLayout:
             orientation: "vertical"
-            size_hint: 0.9, .4
-            height: self.minimum_height
+            size_hint: 0.9, .42
+
             pos_hint: {"center_x": 0.55, "center_y": 0.55}
-            spacing: dp(20)
             padding: dp(10)
+            spacing: dp(20)
 
             MDTextField:
                 id: reg_username
@@ -134,15 +137,18 @@
                 line_color_focus: "#6A7895"
                 max_text_length: 20
                 size_hint_x: 0.8
+                pos_hint: {"center_y": 1}
             MDTextField:
                 id: reg_email
                 hint_text: "*Почта"
                 line_color_focus: "#6A7895"
                 size_hint_x: 0.8
+                pos_hint: {"center_y": 0.67}
 
             MDBoxLayout:
                 orientation: "horizontal"
                 size_hint_y: .4
+                pos_hint: {"center_y": 0.33}
 
                 MDTextField:
                     id: reg_password
@@ -163,12 +169,14 @@
                 password: True
                 line_color_focus: "#6A7895"
                 size_hint_x: 0.8
+                pos_hint: {"center_y": 0}
 
 
 # Приветственный экран
 <WelcomeScreen>:
 
     MDScreen:
+        md_bg_color: 1, 1, 1, 1
 
         MDFloatLayout:
             orientation: 'vertical'
@@ -176,12 +184,13 @@
 
             MDCard:
                 orientation: "vertical"
-                md_bg_color: 1, 1, 1, 1
+                md_bg_color: 1, 1, 1, 0
                 pos_hint: {"center_x": .5, "center_y": .62}
                 size_hint: 1, .66
 
                 FitImage:
                     source: "assets/img/main.jpg"
+
 
             MDLabel:
                 text: "Добро пожаловать!"
@@ -215,7 +224,57 @@
 
     MDSwitch:
         on_active: app.on_switch_active(*args)
-        pos_hint: {"center_x": .75, "center_y": .5}
+        pos_hint: {"center_x": .78, "center_y": .5}
+        size_hint_x: .12
+        theme_thumb_color: "OptionProperty"
+        thumb_color_disabled: "#406AAE"
+        thumb_color: 64, 106, 174, 1
+
+    MDIconButton:
+        icon: "arrow-left"
+        style: "standard"
+        pos_hint: {"center_x": .07, "center_y": .96}
+        on_release: root.manager.current = "main"
+
+
+<AccountScreen>:
+
+    MDFloatLayout:
+
+        MDCard:
+            orientation: "vertical"
+            size_hint: None, None
+            size: dp(180), dp(180)
+            pos_hint: {"center_x": 0.5, "center_y": .8}
+            radius: [dp(100),]
+
+
+            FitImage:
+                source: "assets/img/account.png"
+                radius: [dp(100),]
+                md_bg_color: 1, 1, 1, 0
+
+    MDLabel:
+        id: username_label
+        text: '{app.username}'
+        halign: "center"
+        font_style: "H5"
+        theme_font_name: "Custom"
+        font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+        theme_text_color: "Custom"
+        text_color: "#406AAE"
+        pos_hint: {"center_x": .5, "center_y": .6}
+
+    MDLabel:
+        id: useremail_label
+        text: '{app.username}'
+        halign: "center"
+        font_style: "H5"
+        theme_font_name: "Custom"
+        font_name: "assets/fonts/PTSansNarrow-Regular.ttf"
+        theme_text_color: "Custom"
+        text_color: "#406AAE"
+        pos_hint: {"center_x": .5, "center_y": .52}
 
     MDIconButton:
         icon: "arrow-left"
@@ -256,11 +315,17 @@ MDScreen:
                         name: 'screen 2'
                         icon: 'microphone-outline'
 
+                        MDRoundFlatButton:
+                            text: "Начать запись"
+                            size_hint: .4, .05
+                            pos_hint: {"center_x": 0.5, "center_y": 0.7}
 
-                        MDLabel:
-                            text: 'Запись'
-                            halign: 'center'
-                            font_style: "H1"
+
+                        MDRoundFlatButton:
+                            text: "Прослушать запись"
+                            size_hint: .3, .05
+                            pos_hint: {"center_x": 0.5, "center_y": 0.3}
+
 
                     MDBottomNavigationItem:
                         name: 'screen 3'
@@ -283,59 +348,9 @@ MDScreen:
             SettingsScreen:
                 name: "setting"
 
-            # Экран Личного кабинета НЕ Авторизованного
-            MDScreen:
-                name: "account"
-
-                MDLabel:
-                    text: 'Вы не авторизованы'
-                    halign: 'center'
-                    font_style: "H4"
-
-                MDFillRoundFlatButton:
-                    text: "Войти"
-                    font_style: "H5"
-                    font_name: "assets/fonts/PTSansCaption-Regular.ttf"
-                    size_hint: .55, .05
-                    pos_hint: {"center_x": 0.5, "center_y": 0.3}
-                    theme_bg_color: "Custom"
-                    md_bg_color: "#AEC2EC"
-                    on_release:
-                        screen_manager.current = "login"
-                        nav_drawer.set_state("close")
-
-                MDIconButton:
-                    icon: "arrow-left"
-                    style: "standard"
-                    pos_hint: {"center_x": .07, "center_y": .96}
-                    on_release: root.manager.current = "main"
-
             # Экран Личного кабинета Авторизованного
-            MDScreen:
+            AccountScreen:
                 name: "account"
-
-                MDLabel:
-                    text: 'Добро пожаловть '
-                    halign: 'center'
-                    font_style: "H4"
-
-                MDFillRoundFlatButton:
-                    text: "Войти"
-                    font_style: "H5"
-                    font_name: "assets/fonts/PTSansCaption-Regular.ttf"
-                    size_hint: .55, .05
-                    pos_hint: {"center_x": 0.5, "center_y": 0.3}
-                    theme_bg_color: "Custom"
-                    md_bg_color: "#AEC2EC"
-                    on_release:
-                        screen_manager.current = "login"
-                        nav_drawer.set_state("close")
-
-                MDIconButton:
-                    icon: "arrow-left"
-                    style: "standard"
-                    pos_hint: {"center_x": .07, "center_y": .96}
-                    on_release: root.manager.current = "main"
 
 
         # Боковая панель

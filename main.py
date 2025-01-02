@@ -1,10 +1,10 @@
 import re
 import sqlite3
 
+
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
-
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
@@ -28,23 +28,26 @@ class WelcomeScreen(MDScreen):
 class SettingsScreen(MDScreen):
     pass
 
-class LKScreen(MDScreen):
-    # Флаг авторизации
-    is_logged_in = BooleanProperty(False)
-    username = StringProperty("")
-    email = StringProperty("")
+
+class AccountScreen(MDScreen):
+    pass
 
 
-class MyApp(MDApp):
+class App(MDApp):
 
     dialog = None
     password_visible = False  # Статус видимости пароля
+
+    # Флаг авторизации и данные пользователя
+    is_logged_in = BooleanProperty(False)
+    username = StringProperty("")
+    email = StringProperty("")
 
     def build(self):
 
         self.theme_cls.theme_style = "Light"
 
-        return Builder.load_file("main.kv")
+        return Builder.load_file("test.kv")
 
     def login_user(self, identifier, password):
         conn = sqlite3.connect("users.db")
@@ -57,8 +60,20 @@ class MyApp(MDApp):
         conn.close()
 
         if user:
+            self.is_logged_in = True
+            self.username = user[1]  # Имя пользователя
+            self.email = user[2]  # Почта пользователя
+
+            # Обновляем текст на экране Личного кабинета
+            self.root.ids.screen_manager.get_screen(
+                'account').ids.username_label.text = self.username  # Логин
+
+            self.root.ids.screen_manager.get_screen(
+                'account').ids.useremail_label.text = self.email  # Почта
+
+
             self.show_dialog("Успех", f"Добро пожаловать, {user[1]}!")  # user[1] — имя пользователя
-            self.root.current = "welcome"  # Переход на WelcomeScreen
+            self.root.ids.screen_manager.current = "account"  # Переход в личный кабинет
 
         else:
             self.show_dialog("Ошибка", "Неверная почта или пароль.")
@@ -92,6 +107,8 @@ class MyApp(MDApp):
             cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", (username, email, password))
             conn.commit()
             self.show_dialog("Успех", "Регистрация успешна!")
+            self.root.ids.screen_manager.current = "login"  # Переход ко входу
+
         except sqlite3.IntegrityError:
             self.show_dialog("Ошибка", "Пользователь с таким именем или почтой уже существует.")
         finally:
@@ -149,4 +166,4 @@ class MyApp(MDApp):
 
 
 if __name__ == '__main__':
-    MyApp().run()
+    App().run()
