@@ -1,4 +1,7 @@
-'''
+"""
+Основное приложение с использованием java классов для микрофона.
+Не работает на ПК!
+
 android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
 requirements = python3,
@@ -8,13 +11,15 @@ requirements = python3,
     exceptiongroup,
     asyncgui,
     asynckivy,
-    pyjnius
-    mysql-connector-python,
-'''
+    jnius,
+    mysql-connector-python
+"""
+
 
 import os
 import re
 import mysql.connector
+import json
 
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
@@ -26,10 +31,11 @@ from kivy.storage.jsonstore import JsonStore
 from jnius import autoclass
 from kivy.clock import Clock
 from android.permissions import request_permissions, Permission
-import json
+
 
 with open('config.json') as config_file:
     config = json.load(config_file)
+
 
 from kivy.core.window import Window
 Window.size = (393, 852)
@@ -132,6 +138,12 @@ class App(MDApp):
     username = StringProperty("")
     email = StringProperty("")
 
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
+        self.player = None
+        self.is_recording = None
+        self.r = None
+
     def build(self):
 
         self.theme_cls.theme_style = "Light"
@@ -154,6 +166,7 @@ class App(MDApp):
 
         return Builder.load_file("test.kv")
 
+
     def on_start(self):
 
         self.is_recording = False  # Флаг для отслеживания состояния записи
@@ -172,6 +185,7 @@ class App(MDApp):
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username
             self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email
+
 
     def login_user(self, identifier, password):
 
@@ -201,6 +215,7 @@ class App(MDApp):
 
         else:
             self.show_dialog("Ошибка", "Неверная почта или пароль.")
+
 
     def register_user(self, username, email, password, password_repeat):
 
@@ -286,12 +301,12 @@ class App(MDApp):
         repeat_password_field.password = not self.password_visible  # Меняем видимость повторного пароля
         button.icon = "eye" if self.password_visible else "eye-off"  # Меняем иконку кнопки
 
+
     # Метод для переключения видимости пароля в авторизации
     def toggle_password_visibility_auth(self, textfield, button):
         self.password_visible = not self.password_visible
         textfield.password = not self.password_visible
         button.icon = "eye" if self.password_visible else "eye-off"
-
 
 
     @staticmethod
@@ -317,10 +332,10 @@ class App(MDApp):
         else:  # Если переключатель не активен, включаем светлую тему
             self.theme_cls.theme_style = "Light"
 
-    # МИКРОФОН
+    ############ МИКРОФОН ############
 
     def toggleRecording(self):
-        '''Toggle recording state'''
+        """Toggle recording state"""
         if self.is_recording:
             self.stopRecording()
         else:
@@ -359,7 +374,7 @@ class App(MDApp):
         self.player.set_on_completion_listener(lambda mp: self.onPlaybackComplete())
 
     def onPlaybackComplete(self):
-        '''Сбрасываем состояние после завершения воспроизведения'''
+        """Сбрасываем состояние после завершения воспроизведения"""
         self.player.release()
         self.player = None
 

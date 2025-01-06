@@ -1,3 +1,7 @@
+"""
+Тест записи с микрофона для ПК!
+"""
+
 import os
 import pyaudio
 import wave

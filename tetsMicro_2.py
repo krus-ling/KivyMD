@@ -1,4 +1,6 @@
-'''
+"""
+Тест записи с микрофона для Android!
+
 android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
 requirements = python3,
@@ -8,10 +10,10 @@ requirements = python3,
     exceptiongroup,
     asyncgui,
     asynckivy,
-    jnius
-    mysql-connector-python,
-    python-dotenv
-'''
+    jnius,
+    mysql-connector-python
+"""
+
 
 import os
 
@@ -20,6 +22,7 @@ from jnius import autoclass
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivymd.app import MDApp
+
 
 # Загружаем интерфейс
 kv = '''
@@ -116,6 +119,7 @@ class MyPlayer:
 
 
 class AudioApp(MDApp):
+
     def build(self):
         # Запрос разрешений при запуске приложения
         request_permissions([Permission.RECORD_AUDIO,
@@ -123,19 +127,23 @@ class AudioApp(MDApp):
                              Permission.READ_EXTERNAL_STORAGE])
         return Builder.load_string(kv)
 
+
     def on_start(self):
         self.is_recording = False  # Флаг для отслеживания состояния записи
         self.player = None  # Объект MediaPlayer
 
+
     def toggleRecording(self):
-        '''Toggle recording state'''
+        """Toggle recording state"""
         if self.is_recording:
             self.stopRecording()
         else:
             self.startRecording_clock()
 
+
     def startRecording_clock(self):
         Clock.schedule_once(self.startRecording)
+
 
     def startRecording(self, dt):
         self.r = MyRecorder()
@@ -144,6 +152,7 @@ class AudioApp(MDApp):
         self.root.ids.action_button.text = 'Остановить запись'
         self.root.ids.play_button.disabled = True  # Отключаем кнопку во время записи
         self.root.ids.display_label.text = "Запись..."
+
 
     def stopRecording(self):
         self.r.mRecorder.stop()
@@ -156,6 +165,7 @@ class AudioApp(MDApp):
         # Активируем кнопку воспроизведения
         self.root.ids.play_button.disabled = False
 
+
     def playRecording(self):
         if not self.player:
             self.player = MyPlayer()
@@ -165,6 +175,7 @@ class AudioApp(MDApp):
 
         # Событие по завершению воспроизведения
         self.player.set_on_completion_listener(lambda mp: self.onPlaybackComplete())
+
 
     def onPlaybackComplete(self):
         '''Сбрасываем состояние после завершения воспроизведения'''

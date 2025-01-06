@@ -1,14 +1,21 @@
+
+
+
+import json
 import re
-import sqlite3
 
-
+import mysql.connector
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
+from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
+
+with open('config.json') as config_file:
+    config = json.load(config_file)
 
 Window.size = (393, 852)
 
@@ -37,6 +44,8 @@ class App(MDApp):
 
     dialog = None
     password_visible = False  # Статус видимости пароля
+    conn = None  # Атрибут для хранения соединения с БД
+    store = None  # Хранилище для сохранения состояния входа
 
     # Флаг авторизации и данные пользователя
     is_logged_in = BooleanProperty(False)
@@ -47,33 +56,60 @@ class App(MDApp):
 
         self.theme_cls.theme_style = "Light"
 
+        # Инициализация локального хранилища
+        self.store = JsonStore("user_data.json")
+
+        # Установить соединение с БД при запуске
+        self.conn = mysql.connector.connect(
+            host=config["host"],
+            user = config["user"],
+            password = config["password"],
+            database = config["database"]
+        )
+
         return Builder.load_file("test.kv")
 
+    def on_start(self):
+
+        # Проверить, сохранено ли состояние входа
+        if self.store.exists("user"):
+            user_data = self.store.get("user")
+            self.username = user_data["username"]
+            self.email = user_data["email"]
+            self.is_logged_in = True
+
+            # Переключаемся на экран Личного кабинета после загрузки интерфейса
+            self.root.ids.screen_manager.current = "account"
+
+            # Обновляем текст на экране Личного кабинета
+            self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username
+            self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email
+
     def login_user(self, identifier, password):
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
+
+        cursor = self.conn.cursor()
 
         cursor.execute("""
-            SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ?
+            SELECT * FROM users WHERE (username = %s OR email = %s) AND password = %s
         """, (identifier, identifier, password))
         user = cursor.fetchone()
-        conn.close()
 
         if user:
             self.is_logged_in = True
             self.username = user[1]  # Имя пользователя
             self.email = user[2]  # Почта пользователя
 
+            # Сохраняем состояние входа
+            self.store.put("user", username=self.username, email=self.email)
+
             # Обновляем текст на экране Личного кабинета
-            self.root.ids.screen_manager.get_screen(
-                'account').ids.username_label.text = self.username  # Логин
-
-            self.root.ids.screen_manager.get_screen(
-                'account').ids.useremail_label.text = self.email  # Почта
-
+            self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username  # Логин
+            self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email  # Почта
 
             self.show_dialog("Успех", f"Добро пожаловать, {user[1]}!")  # user[1] — имя пользователя
             self.root.ids.screen_manager.current = "account"  # Переход в личный кабинет
+
+            self.conn.close()
 
         else:
             self.show_dialog("Ошибка", "Неверная почта или пароль.")
@@ -100,19 +136,48 @@ class App(MDApp):
             self.show_dialog("Ошибка", "Пароли не совпадают.")
             return
 
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
+        cursor = self.conn.cursor()
 
         try:
-            cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", (username, email, password))
-            conn.commit()
+            cursor.execute("INSERT INTO users (username, email, password) VALUES (%s, %s, %s)", (username, email, password))
+            self.conn.commit()
             self.show_dialog("Успех", "Регистрация успешна!")
             self.root.ids.screen_manager.current = "login"  # Переход ко входу
 
-        except sqlite3.IntegrityError:
+        except mysql.connector.IntegrityError:
             self.show_dialog("Ошибка", "Пользователь с таким именем или почтой уже существует.")
-        finally:
-            conn.close()
+
+    def logout_user(self):
+
+        """
+        Метод для выхода из аккаунта.
+        """
+
+        if not self.conn or not self.conn.is_connected():
+            self.conn = mysql.connector.connect(
+                host=config["host"],
+                user=config["user"],
+                password=config["password"],
+                database=config["database"]
+            )
+
+        self.is_logged_in = False
+        self.username = ""
+        self.email = ""
+
+        # Удаляем сохранённое состояние
+        if self.store.exists("user"):
+            self.store.delete("user")
+
+        # Очистить поля ввода на экране входа
+        login_screen = self.root.ids.screen_manager.get_screen('login')
+        login_screen.ids.identifier.text = ""  # Очищаем поле для имени пользователя или email
+        login_screen.ids.password.text = ""  # Очищаем поле для пароля
+
+        # Возвращаемся на экран входа
+        self.root.ids.screen_manager.current = "login"
+
+
 
     def show_dialog(self, title, text):
         if not self.dialog:

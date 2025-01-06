@@ -101,35 +101,34 @@
             color: "#6A7895"
             theme_font_name: "Custom"
             font_name: "assets/fonts/PTSansCaption-Regular.ttf"
-            pos_hint: {"center_x": 0.5, "center_y": 0.83}
+            pos_hint: {"center_x": 0.5, "center_y": 0.88}
             halign: "center"
             font_style: "H5"
+            size_hint: .55, .1
 
         MDFillRoundFlatButton:
             text: "Зарегистрироваться"
             font_style: "Subtitle1"
             font_name: "assets/fonts/PTSansCaption-Regular.ttf"
             size_hint: .55, .052
-            pos_hint: {"center_x": 0.5, "center_y": 0.25}
+            pos_hint: {"center_x": 0.5, "center_y": 0.19}
             theme_bg_color: "Custom"
             md_bg_color: "#AEC2EC"
             on_release: app.register_user(reg_username.text, reg_email.text, reg_password.text, password_repeat.text)
 
         MDRoundFlatButton:
             text: "Назад ко входу"
-            pos_hint: {"center_x": 0.5, "center_y": 0.18}
+            pos_hint: {"center_x": 0.5, "center_y": 0.12}
             line_color: [1, 1, 1, 0]
             text_color: "#97ACD1"
             on_release: root.manager.current = "login"
 
 
-        MDBoxLayout:
+        MDFloatLayout:
             orientation: "vertical"
-            size_hint: 0.9, .42
+            size_hint: 0.9, .45
 
-            pos_hint: {"center_x": 0.55, "center_y": 0.55}
-            padding: dp(10)
-            spacing: dp(20)
+            pos_hint: {"center_x": 0.55, "center_y": 0.58}
 
             MDTextField:
                 id: reg_username
@@ -137,18 +136,18 @@
                 line_color_focus: "#6A7895"
                 max_text_length: 20
                 size_hint_x: 0.8
-                pos_hint: {"center_y": 1}
+                pos_hint: {"center_y": .9, "center_x": 0.4}
             MDTextField:
                 id: reg_email
                 hint_text: "*Почта"
                 line_color_focus: "#6A7895"
                 size_hint_x: 0.8
-                pos_hint: {"center_y": 0.67}
+                pos_hint: {"center_y": 0.65, "center_x": 0.4}
 
             MDBoxLayout:
                 orientation: "horizontal"
-                size_hint_y: .4
-                pos_hint: {"center_y": 0.33}
+                size_hint_y: .35
+                pos_hint: {"center_y": 0.4, "center_x": 0.5}
 
                 MDTextField:
                     id: reg_password
@@ -169,7 +168,7 @@
                 password: True
                 line_color_focus: "#6A7895"
                 size_hint_x: 0.8
-                pos_hint: {"center_y": 0}
+                pos_hint: {"center_y": 0, "center_x": 0.4}
 
 
 # Приветственный экран
@@ -224,11 +223,14 @@
 
     MDSwitch:
         on_active: app.on_switch_active(*args)
-        pos_hint: {"center_x": .78, "center_y": .5}
-        size_hint_x: .12
-        theme_thumb_color: "OptionProperty"
+        pos_hint: {"center_x": .78, "center_y": .50}
+        size_hint_x: .13
         thumb_color_disabled: "#406AAE"
-        thumb_color: 64, 106, 174, 1
+        icon_active: "check"
+        icon_inactive: "close"
+        icon_inactive_color: "grey"
+        track_color_inactive: "#97ACD1"
+        thumb_color_active: "lightgrey"
 
     MDIconButton:
         icon: "arrow-left"
@@ -276,6 +278,17 @@
         text_color: "#406AAE"
         pos_hint: {"center_x": .5, "center_y": .52}
 
+    MDFillRoundFlatButton:
+        text: "Выйти"
+        font_style: "H5"
+        font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+        size_hint: .55, .05
+        pos_hint: {'center_x': .5, 'center_y': .2}
+        theme_bg_color: "Custom"
+        md_bg_color: "#AEC2EC"
+        on_release: app.logout_user()  # Вызываем метод выхода из аккаунта
+        elevation_levels: dp(12)
+
     MDIconButton:
         icon: "arrow-left"
         style: "standard"
@@ -315,16 +328,30 @@ MDScreen:
                         name: 'screen 2'
                         icon: 'microphone-outline'
 
-                        MDRoundFlatButton:
-                            text: "Начать запись"
-                            size_hint: .4, .05
-                            pos_hint: {"center_x": 0.5, "center_y": 0.7}
+                        MDFloatLayout:
+                            orientation: "vertical"
 
+#                            MDRoundFlatButton:
+#                                id: action_button
+#                                text: 'Начать запись'
+#                                on_release: app.toggleRecording()
+#                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+#                                size_hint_x: .5
 
-                        MDRoundFlatButton:
-                            text: "Прослушать запись"
-                            size_hint: .3, .05
-                            pos_hint: {"center_x": 0.5, "center_y": 0.3}
+                            MDIconButton:
+                                id: action_button
+                                icon: "assets/img/start_record.png"
+                                icon_size: "70dp"
+                                on_release: app.toggleRecording()
+                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+
+                            MDRoundFlatButton:
+                                id: play_button
+                                text: 'Прослушать'
+                                on_release: app.playRecording()
+                                disabled: True
+                                pos_hint: {"center_x": 0.5, "center_y": 0.2}
+                                size_hint_x: .5
 
 
                     MDBottomNavigationItem:
