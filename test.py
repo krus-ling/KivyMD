@@ -147,20 +147,36 @@ class App(MDApp):
         except mysql.connector.IntegrityError:
             self.show_dialog("Ошибка", "Пользователь с таким именем или почтой уже существует.")
 
-    # def logout_user(self):
-    #     """
-    #     Метод для выхода из аккаунта.
-    #     """
-    #     self.is_logged_in = False
-    #     self.username = ""
-    #     self.email = ""
-    #
-    #     # Удаляем сохранённое состояние
-    #     if self.store.exists("user"):
-    #         self.store.delete("user")
-    #
-    #     # Возвращаемся на экран входа
-    #     self.root.ids.screen_manager.current = "login"
+    def logout_user(self):
+
+        """
+        Метод для выхода из аккаунта.
+        """
+
+        if not self.conn or not self.conn.is_connected():
+            self.conn = mysql.connector.connect(
+                host=config["host"],
+                user=config["user"],
+                password=config["password"],
+                database=config["database"]
+            )
+
+        self.is_logged_in = False
+        self.username = ""
+        self.email = ""
+
+        # Удаляем сохранённое состояние
+        if self.store.exists("user"):
+            self.store.delete("user")
+
+        # Очистить поля ввода на экране входа
+        login_screen = self.root.ids.screen_manager.get_screen('login')
+        login_screen.ids.identifier.text = ""  # Очищаем поле для имени пользователя или email
+        login_screen.ids.password.text = ""  # Очищаем поле для пароля
+
+        # Возвращаемся на экран входа
+        self.root.ids.screen_manager.current = "login"
+
 
 
     def show_dialog(self, title, text):

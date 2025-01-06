@@ -1,3 +1,17 @@
+'''
+android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
+
+requirements = python3,
+    kivy,
+    kivymd,
+    materialyoucolor,
+    exceptiongroup,
+    asyncgui,
+    asynckivy,
+    pyjnius
+    mysql-connector-python,
+'''
+
 import os
 import re
 import mysql.connector
@@ -221,20 +235,36 @@ class App(MDApp):
         except mysql.connector.IntegrityError:
             self.show_dialog("Ошибка", "Пользователь с таким именем или почтой уже существует.")
 
-    # def logout_user(self):
-    #     """
-    #     Метод для выхода из аккаунта.
-    #     """
-    #     self.is_logged_in = False
-    #     self.username = ""
-    #     self.email = ""
-    #
-    #     # Удаляем сохранённое состояние
-    #     if self.store.exists("user"):
-    #         self.store.delete("user")
-    #
-    #     # Возвращаемся на экран входа
-    #     self.root.ids.screen_manager.current = "login"
+
+    def logout_user(self):
+
+        """
+        Метод для выхода из аккаунта.
+        """
+
+        if not self.conn or not self.conn.is_connected():
+            self.conn = mysql.connector.connect(
+                host=config["host"],
+                user=config["user"],
+                password=config["password"],
+                database=config["database"]
+            )
+
+        self.is_logged_in = False
+        self.username = ""
+        self.email = ""
+
+        # Удаляем сохранённое состояние
+        if self.store.exists("user"):
+            self.store.delete("user")
+
+        # Очистить поля ввода на экране входа
+        login_screen = self.root.ids.screen_manager.get_screen('login')
+        login_screen.ids.identifier.text = ""  # Очищаем поле для имени пользователя или email
+        login_screen.ids.password.text = ""  # Очищаем поле для пароля
+
+        # Возвращаемся на экран входа
+        self.root.ids.screen_manager.current = "login"
 
 
     def show_dialog(self, title, text):
@@ -303,17 +333,17 @@ class App(MDApp):
         self.r = MyRecorder()
         self.r.mRecorder.start()
         self.is_recording = True
-        self.root.ids.action_button.text = 'Остановить запись'
+        button = self.root.ids.action_button
+        button.icon = "assets/img/stop_record.png"
         self.root.ids.play_button.disabled = True  # Отключаем кнопку во время записи
-        self.root.ids.display_label.text = "Запись..."
 
     def stopRecording(self):
         self.r.mRecorder.stop()
         self.r.mRecorder.release()
 
         self.is_recording = False
-        self.root.ids.action_button.text = 'Начать запись'
-        self.root.ids.display_label.text = "Сообщение записано"
+        button = self.root.ids.action_button
+        button.icon = "assets/img/start_record.png"
 
         # Активируем кнопку воспроизведения
         self.root.ids.play_button.disabled = False
@@ -330,7 +360,6 @@ class App(MDApp):
 
     def onPlaybackComplete(self):
         '''Сбрасываем состояние после завершения воспроизведения'''
-        self.root.ids.display_label.text = "Запись прослушана!"
         self.player.release()
         self.player = None
 

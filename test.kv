@@ -223,11 +223,14 @@
 
     MDSwitch:
         on_active: app.on_switch_active(*args)
-        pos_hint: {"center_x": .78, "center_y": .5}
-        size_hint_x: .12
-        theme_thumb_color: "OptionProperty"
+        pos_hint: {"center_x": .78, "center_y": .50}
+        size_hint_x: .13
         thumb_color_disabled: "#406AAE"
-        thumb_color: 64, 106, 174, 1
+        icon_active: "check"
+        icon_inactive: "close"
+        icon_inactive_color: "grey"
+        track_color_inactive: "#97ACD1"
+        thumb_color_active: "lightgrey"
 
     MDIconButton:
         icon: "arrow-left"
@@ -275,6 +278,17 @@
         text_color: "#406AAE"
         pos_hint: {"center_x": .5, "center_y": .52}
 
+    MDFillRoundFlatButton:
+        text: "Выйти"
+        font_style: "H5"
+        font_name: "assets/fonts/PTSansCaption-Regular.ttf"
+        size_hint: .55, .05
+        pos_hint: {'center_x': .5, 'center_y': .2}
+        theme_bg_color: "Custom"
+        md_bg_color: "#AEC2EC"
+        on_release: app.logout_user()  # Вызываем метод выхода из аккаунта
+        elevation_levels: dp(12)
+
     MDIconButton:
         icon: "arrow-left"
         style: "standard"
@@ -317,19 +331,19 @@ MDScreen:
                         MDFloatLayout:
                             orientation: "vertical"
 
-                            MDLabel:
-                                id: display_label
-                                text: 'Нажми на кнопку'
-                                pos_hint: {"center_x": 0.5, "center_y": .8}
-                                halign: "center"
-                                size_hint_x: .8
+#                            MDRoundFlatButton:
+#                                id: action_button
+#                                text: 'Начать запись'
+#                                on_release: app.toggleRecording()
+#                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
+#                                size_hint_x: .5
 
-                            MDRoundFlatButton:
+                            MDIconButton:
                                 id: action_button
-                                text: 'Начать запись'
+                                icon: "assets/img/start_record.png"
+                                icon_size: "70dp"
                                 on_release: app.toggleRecording()
                                 pos_hint: {"center_x": 0.5, "center_y": 0.6}
-                                size_hint_x: .5
 
                             MDRoundFlatButton:
                                 id: play_button
