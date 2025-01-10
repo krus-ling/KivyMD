@@ -1,11 +1,13 @@
-
+"""
+Тестовое приложение
+Копия testmysql.py, но БЕЗ java классов, чтобы работало на ПК
+"""
 
 
 import json
 import re
-
 import mysql.connector
-from kivy.core.window import Window
+
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
 from kivy.storage.jsonstore import JsonStore
@@ -14,9 +16,13 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
 
+
 with open('config.json') as config_file:
     config = json.load(config_file)
 
+
+"""Для теста на пк. Убрать при сборке!"""
+from kivy.core.window import Window
 Window.size = (393, 852)
 
 
@@ -52,6 +58,10 @@ class App(MDApp):
     username = StringProperty("")
     email = StringProperty("")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.user_id = None
+
     def build(self):
 
         self.theme_cls.theme_style = "Light"
@@ -69,6 +79,7 @@ class App(MDApp):
 
         return Builder.load_file("test.kv")
 
+
     def on_start(self):
 
         # Проверить, сохранено ли состояние входа
@@ -85,6 +96,7 @@ class App(MDApp):
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username
             self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email
 
+
     def login_user(self, identifier, password):
 
         cursor = self.conn.cursor()
@@ -96,11 +108,12 @@ class App(MDApp):
 
         if user:
             self.is_logged_in = True
+            self.user_id = user[0]
             self.username = user[1]  # Имя пользователя
             self.email = user[2]  # Почта пользователя
 
             # Сохраняем состояние входа
-            self.store.put("user", username=self.username, email=self.email)
+            self.store.put("user", id=self.user_id, username=self.username, email=self.email)
 
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username  # Логин
@@ -113,6 +126,7 @@ class App(MDApp):
 
         else:
             self.show_dialog("Ошибка", "Неверная почта или пароль.")
+
 
     def register_user(self, username, email, password, password_repeat):
 
@@ -147,6 +161,7 @@ class App(MDApp):
         except mysql.connector.IntegrityError:
             self.show_dialog("Ошибка", "Пользователь с таким именем или почтой уже существует.")
 
+
     def logout_user(self):
 
         """
@@ -178,7 +193,6 @@ class App(MDApp):
         self.root.ids.screen_manager.current = "login"
 
 
-
     def show_dialog(self, title, text):
         if not self.dialog:
             self.dialog = MDDialog(
@@ -198,6 +212,7 @@ class App(MDApp):
         repeat_password_field.password = not self.password_visible  # Меняем видимость повторного пароля
         button.icon = "eye" if self.password_visible else "eye-off"  # Меняем иконку кнопки
 
+
     # Метод для переключения видимости пароля в авторизации
     def toggle_password_visibility_auth(self, textfield, button):
         self.password_visible = not self.password_visible
@@ -205,11 +220,10 @@ class App(MDApp):
         button.icon = "eye" if self.password_visible else "eye-off"
 
 
-
     @staticmethod
     def is_valid_email(email):
         """
-        Проверяет валидность почтового адреса
+        Проверяет валидность почтового адреса.
         Возвращает True, если адрес валидный, иначе False
         """
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"

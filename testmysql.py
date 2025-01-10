@@ -1,8 +1,11 @@
 """
 Основное приложение с использованием java классов для микрофона.
+Классы для микрофона работают только на андроиде.
 Не работает на ПК!
 
 android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
+
+source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
 requirements = python3,
     kivy,
@@ -26,6 +29,7 @@ from kivy.properties import BooleanProperty, StringProperty
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.list import OneLineListItem
 from kivymd.uix.screen import MDScreen
 from kivy.storage.jsonstore import JsonStore
 from jnius import autoclass
@@ -36,9 +40,6 @@ from android.permissions import request_permissions, Permission
 with open('config.json') as config_file:
     config = json.load(config_file)
 
-
-from kivy.core.window import Window
-Window.size = (393, 852)
 
 
 class LoginScreen(MDScreen):
@@ -89,7 +90,7 @@ class MyRecorder:
         self.mRecorder.prepare()
 
     def get_output_file(self):
-        '''Возвращает путь к сохранённому аудиофайлу'''
+        """Возвращает путь к сохранённому аудиофайлу"""
         return self.output_file
 
 
@@ -102,27 +103,27 @@ class MyPlayer:
         self.mPlayer = self.MediaPlayer()
 
     def set_data_source(self, file_path):
-        '''Устанавливает источник данных для воспроизведения'''
+        """Устанавливает источник данных для воспроизведения"""
         self.mPlayer.setDataSource(file_path)
 
     def prepare(self):
-        '''Готовит MediaPlayer к воспроизведению'''
+        """Готовит MediaPlayer к воспроизведению"""
         self.mPlayer.prepare()
 
     def start(self):
-        '''Запускает воспроизведение'''
+        """Запускает воспроизведение"""
         self.mPlayer.start()
 
     def stop(self):
-        '''Останавливает воспроизведение'''
+        """Останавливает воспроизведение"""
         self.mPlayer.stop()
 
     def release(self):
-        '''Освобождает ресурсы MediaPlayer'''
+        """Освобождает ресурсы MediaPlayer"""
         self.mPlayer.release()
 
     def set_on_completion_listener(self, listener):
-        '''Устанавливает слушатель завершения воспроизведения'''
+        """Устанавливает слушатель завершения воспроизведения"""
         self.mPlayer.setOnCompletionListener(listener)
 
 
@@ -139,10 +140,11 @@ class App(MDApp):
     email = StringProperty("")
 
     def __init__(self, **kwargs):
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
         self.player = None
         self.is_recording = None
         self.r = None
+        self.user_id = None
 
     def build(self):
 
@@ -198,11 +200,12 @@ class App(MDApp):
 
         if user:
             self.is_logged_in = True
+            self.user_id = user[0]
             self.username = user[1]  # Имя пользователя
             self.email = user[2]  # Почта пользователя
 
             # Сохраняем состояние входа
-            self.store.put("user", username=self.username, email=self.email)
+            self.store.put("user", id=self.user_id, username=self.username, email=self.email)
 
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username  # Логин
@@ -312,7 +315,7 @@ class App(MDApp):
     @staticmethod
     def is_valid_email(email):
         """
-        Проверяет валидность почтового адреса
+        Проверяет валидность почтового адреса.
         Возвращает True, если адрес валидный, иначе False
         """
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
@@ -363,6 +366,15 @@ class App(MDApp):
         # Активируем кнопку воспроизведения
         self.root.ids.play_button.disabled = False
 
+        # Загрузим аудиофайл в базу данных
+        self.upload_audio_to_db()
+
+        # Переключаемся на вкладку "Чат" в нижней навигации
+        self.root.ids.bottom_nav.switch_tab("screen 3")
+
+        # Отправляем сообщение в чат
+        self.send_message("Запись завершена. Текст-заглушка от нейронной сети.")
+
     def playRecording(self):
         if not self.player:
             self.player = MyPlayer()
@@ -377,6 +389,57 @@ class App(MDApp):
         """Сбрасываем состояние после завершения воспроизведения"""
         self.player.release()
         self.player = None
+
+    def upload_audio_to_db(self):
+        """Метод для загрузки аудиофайла в базу данных"""
+
+        # Путь к файлу, который был записан на устройстве
+        audio_file_path = self.r.get_output_file()
+
+        # Прочитаем файл в бинарном режиме
+        with open(audio_file_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
+
+        user_data = self.store.get("user")
+        user_id = user_data["id"]
+
+        # Подключение к базе данных
+        conn = mysql.connector.connect(
+            host=config["host"],
+            user=config["user"],
+            password=config["password"],
+            database=config["database"]
+        )
+
+        cursor = conn.cursor()
+
+        # SQL-запрос для вставки записи в таблицу records
+        insert_query = """
+        INSERT INTO records (id_user, record) 
+        VALUES (%s, %s)
+        """
+
+        try:
+            # Выполнение запроса
+            cursor.execute(insert_query, (user_id, audio_data))
+            conn.commit()  # Сохраняем изменения в БД
+        except mysql.connector.Error as err:
+            print(f"Ошибка при загрузке файла в базу данных: {err}")
+        finally:
+            cursor.close()
+            conn.close()
+
+    def send_message(self, message="Текст-заглушка от нейронной сети"):
+        """Отправляет сообщение в чат"""
+        chat_list = self.root.ids.chat_list
+
+        # Создаём элемент для отображения нового сообщения
+        chat_list.add_widget(
+            OneLineListItem(text=message)
+        )
+
+        # Прокручиваем чат до последнего сообщения
+        self.root.ids.chat_list.parent.scroll_y = 0
 
 
 if __name__ == '__main__':

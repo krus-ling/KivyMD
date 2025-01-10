@@ -21,6 +21,7 @@ with open('config.json') as config_file:
     config = json.load(config_file)
 
 
+"""Для теста на пк. Убрать при сборке!"""
 from kivy.core.window import Window
 Window.size = (393, 852)
 
@@ -57,6 +58,9 @@ class App(MDApp):
     username = StringProperty("")
     email = StringProperty("")
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.user_id = None
 
     def build(self):
 
@@ -104,11 +108,12 @@ class App(MDApp):
 
         if user:
             self.is_logged_in = True
+            self.user_id = user[0]
             self.username = user[1]  # Имя пользователя
             self.email = user[2]  # Почта пользователя
 
             # Сохраняем состояние входа
-            self.store.put("user", username=self.username, email=self.email)
+            self.store.put("user", id=self.user_id, username=self.username, email=self.email)
 
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username  # Логин
@@ -218,7 +223,7 @@ class App(MDApp):
     @staticmethod
     def is_valid_email(email):
         """
-        Проверяет валидность почтового адреса
+        Проверяет валидность почтового адреса.
         Возвращает True, если адрес валидный, иначе False
         """
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"

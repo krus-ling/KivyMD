@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="bpx0k1pfuco9ec1kulzu@bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com" uuid="0bfff6e0-fb5d-444f-a347-dfe6184bf326">
+    <data-source source="LOCAL" name="@bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com" uuid="76b7be12-8636-45c8-89ec-b6662e2a27ff">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com:3306/bpx0k1pfuco9ec1kulzu</jdbc-url>
+      <jdbc-url>jdbc:mysql://bpx0k1pfuco9ec1kulzu-mysql.services.clever-cloud.com:3306</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
