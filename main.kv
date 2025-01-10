@@ -328,6 +328,7 @@ MDScreen:
                         name: 'screen 2'
                         icon: 'microphone-outline'
 
+
                         MDFloatLayout:
                             orientation: "vertical"
 
@@ -343,6 +344,7 @@ MDScreen:
                                 icon: "assets/img/start_record.png"
                                 icon_size: "70dp"
                                 on_release: app.toggleRecording()
+
                                 pos_hint: {"center_x": 0.5, "center_y": 0.6}
 
                             MDRoundFlatButton:
@@ -358,10 +360,18 @@ MDScreen:
                         name: 'screen 3'
                         icon: 'chat-outline'
 
-                        MDLabel:
-                            text: 'Чат'
-                            halign: 'center'
-                            font_style: "H1"
+                        BoxLayout:
+                            orientation: 'vertical'
+
+                            MDLabel:
+                                text: 'Чат'
+                                halign: 'center'
+                                font_style: "H1"
+
+                            # Список сообщений
+                            ScrollView:
+                                MDList:
+                                    id: chat_list
 
                 # Иконка меню
                 MDIconButton:

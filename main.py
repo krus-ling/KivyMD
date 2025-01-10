@@ -1,29 +1,46 @@
 """
-Тестовое приложение
-Копия testmysql.py, но БЕЗ java классов, чтобы работало на ПК
+
+Основное приложение.
+Классы для микрофона работают только на андроиде.
+!!!Не работает на ПК!!!
+
+android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
+
+source.include_exts = py,png,jpg,kv,atlas,ttf,json
+
+requirements = python3,
+    kivy,
+    kivymd,
+    materialyoucolor,
+    exceptiongroup,
+    asyncgui,
+    asynckivy,
+    jnius,
+    mysql-connector-python
 """
 
 
-import json
+import os
 import re
 import mysql.connector
+import json
 
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
-from kivy.storage.jsonstore import JsonStore
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.list import OneLineListItem
 from kivymd.uix.screen import MDScreen
+from kivy.storage.jsonstore import JsonStore
+from jnius import autoclass
+from kivy.clock import Clock
+from android.permissions import request_permissions, Permission
 
 
 with open('config.json') as config_file:
     config = json.load(config_file)
 
-
-"""Для теста на пк. Убрать при сборке!"""
-from kivy.core.window import Window
-Window.size = (393, 852)
 
 
 class LoginScreen(MDScreen):
@@ -46,6 +63,71 @@ class AccountScreen(MDScreen):
     pass
 
 
+class MyRecorder:
+    def __init__(self):
+        '''Recorder object To access Android Hardware'''
+        self.MediaRecorder = autoclass('android.media.MediaRecorder')
+        self.AudioSource = autoclass('android.media.MediaRecorder$AudioSource')
+        self.OutputFormat = autoclass('android.media.MediaRecorder$OutputFormat')
+        self.AudioEncoder = autoclass('android.media.MediaRecorder$AudioEncoder')
+
+        # create out recorder
+        self.mRecorder = self.MediaRecorder()
+        self.mRecorder.setAudioSource(self.AudioSource.MIC)
+        self.mRecorder.setOutputFormat(self.OutputFormat.THREE_GPP)
+
+        # Используем безопасный путь для записи
+        Context = autoclass('android.content.Context')
+        activity = autoclass('org.kivy.android.PythonActivity').mActivity
+        storage_path = activity.getExternalFilesDir(None).getAbsolutePath()
+        if not storage_path:
+            raise Exception("Не удалось получить путь для сохранения файла.")
+        os.makedirs(storage_path, exist_ok=True)
+
+
+        self.output_file = os.path.join(storage_path, "MYAUDIO.3gp")
+        self.mRecorder.setOutputFile(self.output_file)
+        self.mRecorder.setAudioEncoder(self.AudioEncoder.AMR_NB)
+        self.mRecorder.prepare()
+
+    def get_output_file(self):
+        """Возвращает путь к сохранённому аудиофайлу"""
+        return self.output_file
+
+
+class MyPlayer:
+    def __init__(self):
+        """Player object to play the audio file using Android hardware"""
+        self.MediaPlayer = autoclass('android.media.MediaPlayer')
+
+        # Создаём объект MediaPlayer
+        self.mPlayer = self.MediaPlayer()
+
+    def set_data_source(self, file_path):
+        """Устанавливает источник данных для воспроизведения"""
+        self.mPlayer.setDataSource(file_path)
+
+    def prepare(self):
+        """Готовит MediaPlayer к воспроизведению"""
+        self.mPlayer.prepare()
+
+    def start(self):
+        """Запускает воспроизведение"""
+        self.mPlayer.start()
+
+    def stop(self):
+        """Останавливает воспроизведение"""
+        self.mPlayer.stop()
+
+    def release(self):
+        """Освобождает ресурсы MediaPlayer"""
+        self.mPlayer.release()
+
+    def set_on_completion_listener(self, listener):
+        """Устанавливает слушатель завершения воспроизведения"""
+        self.mPlayer.setOnCompletionListener(listener)
+
+
 class App(MDApp):
 
     dialog = None
@@ -60,11 +142,19 @@ class App(MDApp):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.player = None
+        self.is_recording = None
+        self.r = None
         self.user_id = None
 
     def build(self):
 
         self.theme_cls.theme_style = "Light"
+
+        # Запрос разрешений при запуске приложения
+        request_permissions([Permission.RECORD_AUDIO,
+                             Permission.WRITE_EXTERNAL_STORAGE,
+                             Permission.READ_EXTERNAL_STORAGE])
 
         # Инициализация локального хранилища
         self.store = JsonStore("user_data.json")
@@ -81,6 +171,9 @@ class App(MDApp):
 
 
     def on_start(self):
+
+        self.is_recording = False  # Флаг для отслеживания состояния записи
+        self.player = None  # Объект MediaPlayer
 
         # Проверить, сохранено ли состояние входа
         if self.store.exists("user"):
@@ -242,6 +335,112 @@ class App(MDApp):
             self.theme_cls.theme_style = "Dark"
         else:  # Если переключатель не активен, включаем светлую тему
             self.theme_cls.theme_style = "Light"
+
+    ############ МИКРОФОН ############
+
+    def toggleRecording(self):
+        """Toggle recording state"""
+        if self.is_recording:
+            self.stopRecording()
+        else:
+            self.startRecording_clock()
+
+    def startRecording_clock(self):
+        Clock.schedule_once(self.startRecording)
+
+    def startRecording(self, dt):
+        self.r = MyRecorder()
+        self.r.mRecorder.start()
+        self.is_recording = True
+        button = self.root.ids.action_button
+        button.icon = "assets/img/stop_record.png"
+        self.root.ids.play_button.disabled = True  # Отключаем кнопку во время записи
+
+    def stopRecording(self):
+        self.r.mRecorder.stop()
+        self.r.mRecorder.release()
+
+        self.is_recording = False
+        button = self.root.ids.action_button
+        button.icon = "assets/img/start_record.png"
+
+        # Активируем кнопку воспроизведения
+        self.root.ids.play_button.disabled = False
+
+        # Загрузим аудиофайл в базу данных
+        self.upload_audio_to_db()
+
+        # Переключаемся на вкладку "Чат" в нижней навигации
+        self.root.ids.bottom_nav.switch_tab("screen 3")
+
+        # Отправляем сообщение в чат
+        self.send_message("Запись завершена. Текст-заглушка от нейронной сети.")
+
+    def playRecording(self):
+        if not self.player:
+            self.player = MyPlayer()
+            self.player.set_data_source(self.r.get_output_file())  # Устанавливаем источник данных (путь к файлу)
+            self.player.prepare()  # Подготавливаем для воспроизведения
+        self.player.start()  # Запускаем воспроизведение
+
+        # Событие по завершению воспроизведения
+        self.player.set_on_completion_listener(lambda mp: self.onPlaybackComplete())
+
+    def onPlaybackComplete(self):
+        """Сбрасываем состояние после завершения воспроизведения"""
+        self.player.release()
+        self.player = None
+
+    def upload_audio_to_db(self):
+        """Метод для загрузки аудиофайла в базу данных"""
+
+        # Путь к файлу, который был записан на устройстве
+        audio_file_path = self.r.get_output_file()
+
+        # Прочитаем файл в бинарном режиме
+        with open(audio_file_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
+
+        user_data = self.store.get("user")
+        user_id = user_data["id"]
+
+        # Подключение к базе данных
+        conn = mysql.connector.connect(
+            host=config["host"],
+            user=config["user"],
+            password=config["password"],
+            database=config["database"]
+        )
+
+        cursor = conn.cursor()
+
+        # SQL-запрос для вставки записи в таблицу records
+        insert_query = """
+        INSERT INTO records (id_user, record) 
+        VALUES (%s, %s)
+        """
+
+        try:
+            # Выполнение запроса
+            cursor.execute(insert_query, (user_id, audio_data))
+            conn.commit()  # Сохраняем изменения в БД
+        except mysql.connector.Error as err:
+            print(f"Ошибка при загрузке файла в базу данных: {err}")
+        finally:
+            cursor.close()
+            conn.close()
+
+    def send_message(self, message="Текст-заглушка от нейронной сети"):
+        """Отправляет сообщение в чат"""
+        chat_list = self.root.ids.chat_list
+
+        # Создаём элемент для отображения нового сообщения
+        chat_list.add_widget(
+            OneLineListItem(text=message)
+        )
+
+        # Прокручиваем чат до последнего сообщения
+        self.root.ids.chat_list.parent.scroll_y = 0
 
 
 if __name__ == '__main__':

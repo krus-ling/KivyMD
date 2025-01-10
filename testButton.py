@@ -1,3 +1,8 @@
+"""
+Тест кнопки для записи звука
+"""
+
+
 from kivy.lang import Builder
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen

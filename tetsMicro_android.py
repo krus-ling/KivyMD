@@ -1,5 +1,5 @@
 """
-Тест записи с микрофона для Android!
+Тестовое приложение записи с микрофона для Android!
 
 android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
