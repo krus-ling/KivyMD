@@ -5,6 +5,10 @@
 
     !!!    Не работает на ПК    !!!
 
+"""
+
+# buildozer.spec
+"""
 android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
@@ -26,6 +30,10 @@ import re
 import mysql.connector
 import json
 
+from datetime import datetime
+from kivy.metrics import dp
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.label import MDLabel
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
 from kivymd.app import MDApp
@@ -41,7 +49,6 @@ from android.permissions import request_permissions, Permission
 
 with open('config.json') as config_file:
     config = json.load(config_file)
-
 
 
 class LoginScreen(MDScreen):
@@ -66,7 +73,7 @@ class AccountScreen(MDScreen):
 
 class MyRecorder:
     def __init__(self):
-        '''Recorder object To access Android Hardware'''
+        """Recorder object To access Android Hardware"""
         self.MediaRecorder = autoclass('android.media.MediaRecorder')
         self.AudioSource = autoclass('android.media.MediaRecorder$AudioSource')
         self.OutputFormat = autoclass('android.media.MediaRecorder$OutputFormat')
@@ -129,12 +136,61 @@ class MyPlayer:
         self.mPlayer.setOnCompletionListener(listener)
 
 
+class MessageBubble(MDBoxLayout):
+    def __init__(self, message, timestamp, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint_y = None  # Высота зависит от содержимого
+        self.orientation = "vertical"  # Вертикальная ориентация для текста
+        self.padding = [dp(20), dp(20), dp(20), dp(20)]  # Отступы внутри фона
+        self.spacing = dp(15)  # Отступы между текстом и временной меткой
+
+        # Добавляем фон
+        self.md_bg_color = "#97ACD1"  # Светлый фон
+        self.radius = [dp(30), dp(30), dp(30), dp(30)]  # Радиус углов
+
+
+        # Добавляем текст
+        label = MDLabel(
+            text=message,
+            size_hint_y=.8,
+            pos_hint={"center_y": .5},
+            markup=True,
+            halign="left",
+            valign="middle",
+            text_size=(self.width, None),  # Учитываем отступы
+            theme_text_color="Custom",
+            text_color="#FFFFFF",
+        )
+
+        label.bind(
+            texture_size=lambda instance, value: setattr(self, "height", instance.texture_size[1] + 100)
+        )
+
+        # Добавляем временную метку
+        timestamp_label = MDLabel(
+            text=timestamp,
+            size_hint_y=None,
+            height=dp(5),  # Фиксированная высота
+            markup=True,
+            halign="right",
+            valign="middle",
+            text_size=(self.width - 20, None),
+            theme_text_color="Custom",
+            text_color="#FFFFFF",
+            font_style="Caption",
+        )
+
+        self.add_widget(label)
+        self.add_widget(timestamp_label)
+
+
 class App(MDApp):
 
     dialog = None
     password_visible = False  # Статус видимости пароля
     conn = None  # Атрибут для хранения соединения с БД
     store = None  # Хранилище для сохранения состояния входа
+    messages_json = None  # Хранилище для сохранения сообщений
 
     # Флаг авторизации и данные пользователя
     is_logged_in = BooleanProperty(False)
@@ -159,6 +215,7 @@ class App(MDApp):
 
         # Инициализация локального хранилища
         self.store = JsonStore("user_data.json")
+        self.messages_json = JsonStore("messages.json")
 
         # Установить соединение с БД при запуске
         self.conn = mysql.connector.connect(
@@ -189,6 +246,23 @@ class App(MDApp):
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username
             self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email
+
+        saved_messages = self.load_messages()
+
+        if not saved_messages["message"]:
+            # Генерация 10 длинных сообщений, если их нет
+            for i in range(10):
+                message = (
+                    f"Длинное сообщение #{i + 1}. "
+                    f"Тестовая информация, чтобы проверить работу чата. "
+                    f"Это сообщение содержит много текста и может быть длинным."
+                )
+                timestamp = datetime.now().strftime("%H:%M")
+                self.send_message(message, timestamp)
+        else:
+            # Загрузка сохранённых сообщений
+            for msg in reversed(saved_messages["message"]):
+                self.send_message(msg["text"], timestamp=msg["timestamp"])
 
 
     def login_user(self, identifier, password):
@@ -431,17 +505,45 @@ class App(MDApp):
             cursor.close()
             conn.close()
 
-    def send_message(self, message="Текст-заглушка от нейронной сети"):
+    def send_message(self, message="Текст-заглушка от нейронной сети", timestamp=None):
         """Отправляет сообщение в чат"""
         chat_list = self.root.ids.chat_list
 
-        # Создаём элемент для отображения нового сообщения
+        # Получаем текущее время для метки
+        timestamp = datetime.now().strftime("%H:%M")
+
+        # Добавляем кастомный виджет для нового сообщения
+        chat_list.add_widget(MessageBubble(message=message, timestamp=timestamp), index=0)
+
+        # Добавляем отступ между сообщениями
         chat_list.add_widget(
-            OneLineListItem(text=message)
+            MDBoxLayout(size_hint_y=None, height=30)  # Пустое пространство
         )
 
-        # Прокручиваем чат до последнего сообщения
-        self.root.ids.chat_list.parent.scroll_y = 0
+        # Прокручиваем чат вниз
+        chat_list.parent.scroll_to(chat_list.children[0])
+
+        # Сохраняем все сообщения в хранилище
+        self.save_messages()
+
+    def load_messages(self):
+        """Загружает сообщения из локального хранилища JsonStore."""
+        if self.messages_json.exists("messages"):
+            return self.messages_json.get("messages")
+        return {"message": []}
+
+    def save_messages(self):
+        """Сохраняет сообщения в локальное хранилище JsonStore."""
+        messages = {"message": []}
+        for message in self.root.ids.chat_list.children:
+            if isinstance(message, MessageBubble):
+                messages["message"].append({
+                    "text": message.children[1].text,
+                    "timestamp": message.children[0].text,
+                })
+
+        # Сохраняем сообщения с ключом "messages"
+        self.messages_json["messages"] = messages  # Используем этот способ записи
 
 
 if __name__ == '__main__':

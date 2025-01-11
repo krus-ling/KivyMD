@@ -328,48 +328,37 @@ MDScreen:
                         name: 'screen 2'
                         icon: 'microphone-outline'
 
+                        MDIconButton:
+                            id: action_button
+                            icon: "assets/img/start_record.png"
+                            icon_size: "100dp"
+                            on_release: app.toggleRecording()
 
-                        MDFloatLayout:
-                            orientation: "vertical"
+                            pos_hint: {"center_x": 0.5, "center_y": 0.6}
 
-#                            MDRoundFlatButton:
-#                                id: action_button
-#                                text: 'Начать запись'
-#                                on_release: app.toggleRecording()
-#                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
-#                                size_hint_x: .5
-
-                            MDIconButton:
-                                id: action_button
-                                icon: "assets/img/start_record.png"
-                                icon_size: "70dp"
-                                on_release: app.toggleRecording()
-
-                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
-
-                            MDRoundFlatButton:
-                                id: play_button
-                                text: 'Прослушать'
-                                on_release: app.playRecording()
-                                disabled: True
-                                pos_hint: {"center_x": 0.5, "center_y": 0.2}
-                                size_hint_x: .5
+                        MDRoundFlatButton:
+                            id: play_button
+                            text: 'Прослушать'
+                            on_release: app.playRecording()
+                            disabled: True
+                            pos_hint: {"center_x": 0.5, "center_y": 0.2}
+                            size_hint_x: .5
 
 
                     MDBottomNavigationItem:
                         name: 'screen 3'
                         icon: 'chat-outline'
 
-                        BoxLayout:
+                        MDBoxLayout:
                             orientation: 'vertical'
-
-                            MDLabel:
-                                text: 'Чат'
-                                halign: 'center'
-                                font_style: "H1"
+                            padding: 0
+                            size_hint_y: .9
+                            size_hint_x: .9
+                            pos_hint: {"center_x": 0.5, "center_y": 0.45}
 
                             # Список сообщений
-                            ScrollView:
+                            MDScrollView:
+                                do_scroll_x: False
                                 MDList:
                                     id: chat_list
 
@@ -385,7 +374,7 @@ MDScreen:
             SettingsScreen:
                 name: "setting"
 
-            # Экран Личного кабинета Авторизованного
+            # Экран Личного кабинета
             AccountScreen:
                 name: "account"
 
