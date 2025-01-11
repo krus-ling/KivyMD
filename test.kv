@@ -250,11 +250,12 @@
             pos_hint: {"center_x": 0.5, "center_y": .8}
             radius: [dp(100),]
 
-
             FitImage:
-                source: "assets/img/account.png"
+                id: avatar  # Добавляем id для аватара
+                source: "assets/img/avatars/account.png"
                 radius: [dp(100),]
                 md_bg_color: 1, 1, 1, 0
+                on_touch_down: if self.collide_point(*args[1].pos): app.show_avatar_selection()
 
     MDLabel:
         id: username_label

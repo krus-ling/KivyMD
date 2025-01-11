@@ -185,8 +185,9 @@ class TestChatApp(MDApp):
         """Отправляет сообщение в чат"""
         chat_list = self.root.ids.chat_list
 
-        # Получаем текущее время для метки
-        timestamp = datetime.now().strftime("%H:%M")
+        # Если временная метка не передана, используем текущее время
+        if not timestamp:
+            timestamp = datetime.now().strftime("%H:%M")
 
         # Добавляем кастомный виджет для нового сообщения
         chat_list.add_widget(MessageBubble(message=message, timestamp=timestamp), index=0)

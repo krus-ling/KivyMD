@@ -6,6 +6,7 @@
     !!!    Не работает на ПК    !!!
 
 """
+from kivy.uix.scrollview import ScrollView
 
 # buildozer.spec
 """
@@ -30,6 +31,8 @@ import re
 import mysql.connector
 import json
 
+from kivy.uix.image import Image
+from kivymd.uix.gridlayout import MDGridLayout
 from datetime import datetime
 from kivy.metrics import dp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -203,6 +206,8 @@ class App(MDApp):
         self.is_recording = None
         self.r = None
         self.user_id = None
+        self.dialog = None
+        self.selected_avatar = "assets/img/avatars/account.png"  # По умолчанию
 
     def build(self):
 
@@ -263,6 +268,15 @@ class App(MDApp):
             # Загрузка сохранённых сообщений
             for msg in reversed(saved_messages["message"]):
                 self.send_message(msg["text"], timestamp=msg["timestamp"])
+
+        """Метод вызывается после завершения построения интерфейса"""
+        # Загружаем аватар из сохранённых данных
+        if self.store.exists("avatar"):
+            avatar = self.store.get("avatar")["path"]
+            self.selected_avatar = avatar
+            if self.root:
+                # Обновляем аватар только если root готов
+                self.root.ids.avatar.source = avatar
 
 
     def login_user(self, identifier, password):
@@ -509,8 +523,9 @@ class App(MDApp):
         """Отправляет сообщение в чат"""
         chat_list = self.root.ids.chat_list
 
-        # Получаем текущее время для метки
-        timestamp = datetime.now().strftime("%H:%M")
+        # Если временная метка не передана, используем текущее время
+        if not timestamp:
+            timestamp = datetime.now().strftime("%H:%M")
 
         # Добавляем кастомный виджет для нового сообщения
         chat_list.add_widget(MessageBubble(message=message, timestamp=timestamp), index=0)
@@ -544,6 +559,65 @@ class App(MDApp):
 
         # Сохраняем сообщения с ключом "messages"
         self.messages_json["messages"] = messages  # Используем этот способ записи
+
+    def show_avatar_selection(self):
+        """Открывает диалог для выбора аватара."""
+        if not self.dialog:
+            # Создаем прокручиваемую область
+            scroll = ScrollView(size_hint=(1, None), size=("500dp", "400dp"))
+
+            # Сетка для отображения аватаров
+            content = MDGridLayout(cols=2, spacing="30dp", size_hint_y=None)
+            content.bind(minimum_height=content.setter("height"))
+
+            # Загружаем список доступных аватаров
+            avatar_paths = [
+                               f"assets/img/avatars/{i}.png" for i in range(1, 12)
+                           ] + ["assets/img/avatars/account.png"]
+
+            for avatar_path in avatar_paths:
+                img = Image(
+                    source=avatar_path,
+                    size_hint=(None, None),
+                    size=("80dp", "80dp"),
+                    allow_stretch=True,
+                    keep_ratio=True
+                )
+                img.bind(
+                    on_touch_down=lambda instance, touch, path=avatar_path: self.select_avatar(instance, touch, path))
+                content.add_widget(img)
+
+            # Вставляем сетку в прокручиваемую область
+            scroll.add_widget(content)
+
+            # Диалоговое окно
+            self.dialog = MDDialog(
+                title="Выберите аватар",
+                type="custom",
+                content_cls=scroll,  # Прокручиваемая область
+                buttons=[
+                    MDFlatButton(
+                        text="Закрыть",
+                        on_release=lambda x: self.dialog.dismiss(),
+                    ),
+                ],
+            )
+        self.dialog.open()
+
+    def select_avatar(self, instance, touch, avatar_path):
+        """Обрабатывает выбор аватара."""
+        if instance.collide_point(*touch.pos):  # Проверяем, было ли нажатие на картинку
+            self.selected_avatar = avatar_path
+            if self.root:
+                self.root.ids.avatar.source = avatar_path  # Обновляем аватар в интерфейсе
+            self.save_selected_avatar()  # Сохраняем выбранный аватар
+            self.dialog.dismiss()
+
+    def save_selected_avatar(self):
+        """Сохраняет выбранный аватар."""
+        self.store.put("avatar", path=self.selected_avatar)
+        if self.root:
+            self.root.ids.avatar.source = self.selected_avatar  # Обновляем аватар в интерфейсе
 
 
 if __name__ == '__main__':
