@@ -141,6 +141,7 @@ class TestChatApp(MDApp):
     def select_avatar(self, instance, touch, avatar_path):
         """Обрабатывает выбор аватара."""
         if instance.collide_point(*touch.pos):  # Проверяем, было ли нажатие на картинку
+            print(f"Выбрана картинка по пути: {avatar_path}")
             self.selected_avatar = avatar_path
             if self.root:
                 self.root.ids.avatar.source = avatar_path  # Обновляем аватар в интерфейсе

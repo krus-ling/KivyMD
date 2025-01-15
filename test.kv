@@ -185,10 +185,10 @@
                 orientation: "vertical"
                 md_bg_color: 1, 1, 1, 0
                 pos_hint: {"center_x": .5, "center_y": .62}
-                size_hint: 1, .66
+                size_hint: 1, .5
 
                 FitImage:
-                    source: "assets/img/main.jpg"
+                    source: "assets/img/main2.png"
 
 
             MDLabel:
@@ -244,6 +244,7 @@
     MDFloatLayout:
 
         MDCard:
+            id: mdcard
             orientation: "vertical"
             size_hint: None, None
             size: dp(180), dp(180)
@@ -251,11 +252,11 @@
             radius: [dp(100),]
 
             FitImage:
-                id: avatar  # Добавляем id для аватара
+                id: avatar
                 source: "assets/img/avatars/account.png"
                 radius: [dp(100),]
                 md_bg_color: 1, 1, 1, 0
-                on_touch_down: if self.collide_point(*args[1].pos): app.show_avatar_selection()
+                #on_touch_down: if self.collide_point(*args[1].pos): app.show_avatar_selection()
 
     MDLabel:
         id: username_label
@@ -344,6 +345,16 @@ MDScreen:
                             disabled: True
                             pos_hint: {"center_x": 0.5, "center_y": 0.2}
                             size_hint_x: .5
+                            line_color: "#13397D"
+                            theme_text_color: "Custom"
+                            text_color: "#13397D"
+
+                        Label:
+                            id: recording_time
+                            text: "00:00"
+                            pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                            size_hint: None, None
+                            size: "100dp", "50dp"
 
 
                     MDBottomNavigationItem:

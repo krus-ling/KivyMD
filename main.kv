@@ -185,10 +185,10 @@
                 orientation: "vertical"
                 md_bg_color: 1, 1, 1, 0
                 pos_hint: {"center_x": .5, "center_y": .62}
-                size_hint: 1, .66
+                size_hint: 1, .5
 
                 FitImage:
-                    source: "assets/img/main.jpg"
+                    source: "assets/img/main2.png"
 
 
             MDLabel:
@@ -244,17 +244,19 @@
     MDFloatLayout:
 
         MDCard:
+            id: mdcard
             orientation: "vertical"
             size_hint: None, None
             size: dp(180), dp(180)
             pos_hint: {"center_x": 0.5, "center_y": .8}
             radius: [dp(100),]
 
-
             FitImage:
-                source: "assets/img/account.png"
+                id: avatar
+                source: "assets/img/avatars/account.png"
                 radius: [dp(100),]
                 md_bg_color: 1, 1, 1, 0
+                #on_touch_down: if self.collide_point(*args[1].pos): app.show_avatar_selection()
 
     MDLabel:
         id: username_label
@@ -328,48 +330,47 @@ MDScreen:
                         name: 'screen 2'
                         icon: 'microphone-outline'
 
+                        MDIconButton:
+                            id: action_button
+                            icon: "assets/img/start_record.png"
+                            icon_size: "100dp"
+                            on_release: app.toggleRecording()
 
-                        MDFloatLayout:
-                            orientation: "vertical"
+                            pos_hint: {"center_x": 0.5, "center_y": 0.6}
 
-#                            MDRoundFlatButton:
-#                                id: action_button
-#                                text: 'Начать запись'
-#                                on_release: app.toggleRecording()
-#                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
-#                                size_hint_x: .5
+                        MDRoundFlatButton:
+                            id: play_button
+                            text: 'Прослушать'
+                            on_release: app.playRecording()
+                            disabled: True
+                            pos_hint: {"center_x": 0.5, "center_y": 0.2}
+                            size_hint_x: .5
+                            line_color: "#13397D"
+                            theme_text_color: "Custom"
+                            text_color: "#13397D"
 
-                            MDIconButton:
-                                id: action_button
-                                icon: "assets/img/start_record.png"
-                                icon_size: "70dp"
-                                on_release: app.toggleRecording()
-
-                                pos_hint: {"center_x": 0.5, "center_y": 0.6}
-
-                            MDRoundFlatButton:
-                                id: play_button
-                                text: 'Прослушать'
-                                on_release: app.playRecording()
-                                disabled: True
-                                pos_hint: {"center_x": 0.5, "center_y": 0.2}
-                                size_hint_x: .5
+                        Label:
+                            id: recording_time
+                            text: "00:00"
+                            pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                            size_hint: None, None
+                            size: "100dp", "50dp"
 
 
                     MDBottomNavigationItem:
                         name: 'screen 3'
                         icon: 'chat-outline'
 
-                        BoxLayout:
+                        MDBoxLayout:
                             orientation: 'vertical'
-
-                            MDLabel:
-                                text: 'Чат'
-                                halign: 'center'
-                                font_style: "H1"
+                            padding: 0
+                            size_hint_y: .9
+                            size_hint_x: .9
+                            pos_hint: {"center_x": 0.5, "center_y": 0.45}
 
                             # Список сообщений
-                            ScrollView:
+                            MDScrollView:
+                                do_scroll_x: False
                                 MDList:
                                     id: chat_list
 
@@ -385,7 +386,7 @@ MDScreen:
             SettingsScreen:
                 name: "setting"
 
-            # Экран Личного кабинета Авторизованного
+            # Экран Личного кабинета
             AccountScreen:
                 name: "account"
 

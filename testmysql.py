@@ -6,11 +6,12 @@
     !!!    Не работает на ПК    !!!
 
 """
+import subprocess
+
 from kivy.uix.scrollview import ScrollView
 
 # buildozer.spec
 """
-android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
 
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 
@@ -23,6 +24,14 @@ requirements = python3,
     asynckivy,
     jnius,
     mysql-connector-python
+    
+presplash.filename = assets/img/icon2.png
+
+icon.filename = assets/img/icon2.png
+    
+106 строка
+android.permissions = RECORD_AUDIO, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET
+
 """
 
 
@@ -82,12 +91,13 @@ class MyRecorder:
         self.OutputFormat = autoclass('android.media.MediaRecorder$OutputFormat')
         self.AudioEncoder = autoclass('android.media.MediaRecorder$AudioEncoder')
 
-        # create out recorder
+        # Создаем MediaRecorder
         self.mRecorder = self.MediaRecorder()
         self.mRecorder.setAudioSource(self.AudioSource.MIC)
-        self.mRecorder.setOutputFormat(self.OutputFormat.THREE_GPP)
+        self.mRecorder.setOutputFormat(self.OutputFormat.MPEG_4)  # Используем формат MPEG_4
+        self.mRecorder.setAudioEncoder(self.AudioEncoder.AAC)  # Используем кодек AAC
 
-        # Используем безопасный путь для записи
+        # Используем безопасный путь для сохранения файла
         Context = autoclass('android.content.Context')
         activity = autoclass('org.kivy.android.PythonActivity').mActivity
         storage_path = activity.getExternalFilesDir(None).getAbsolutePath()
@@ -95,15 +105,15 @@ class MyRecorder:
             raise Exception("Не удалось получить путь для сохранения файла.")
         os.makedirs(storage_path, exist_ok=True)
 
-
-        self.output_file = os.path.join(storage_path, "MYAUDIO.3gp")
+        # Указываем путь и формат файла
+        self.output_file = os.path.join(storage_path, "MY.m4a")  # Меняем расширение на .m4a
         self.mRecorder.setOutputFile(self.output_file)
-        self.mRecorder.setAudioEncoder(self.AudioEncoder.AMR_NB)
         self.mRecorder.prepare()
 
     def get_output_file(self):
         """Возвращает путь к сохранённому аудиофайлу"""
         return self.output_file
+
 
 
 class MyPlayer:
@@ -208,19 +218,18 @@ class App(MDApp):
         self.user_id = None
         self.dialog = None
         self.selected_avatar = "assets/img/avatars/account.png"  # По умолчанию
+        self.store = JsonStore("user_data.json")
+        self.messages_json = JsonStore("messages.json")
 
     def build(self):
 
         self.theme_cls.theme_style = "Light"
+        self.recording_time = 0  # Время записи в секундах
 
         # Запрос разрешений при запуске приложения
         request_permissions([Permission.RECORD_AUDIO,
                              Permission.WRITE_EXTERNAL_STORAGE,
                              Permission.READ_EXTERNAL_STORAGE])
-
-        # Инициализация локального хранилища
-        self.store = JsonStore("user_data.json")
-        self.messages_json = JsonStore("messages.json")
 
         # Установить соединение с БД при запуске
         self.conn = mysql.connector.connect(
@@ -254,29 +263,19 @@ class App(MDApp):
 
         saved_messages = self.load_messages()
 
-        if not saved_messages["message"]:
-            # Генерация 10 длинных сообщений, если их нет
-            for i in range(10):
-                message = (
-                    f"Длинное сообщение #{i + 1}. "
-                    f"Тестовая информация, чтобы проверить работу чата. "
-                    f"Это сообщение содержит много текста и может быть длинным."
-                )
-                timestamp = datetime.now().strftime("%H:%M")
-                self.send_message(message, timestamp)
-        else:
+        if saved_messages["message"]:
             # Загрузка сохранённых сообщений
             for msg in reversed(saved_messages["message"]):
                 self.send_message(msg["text"], timestamp=msg["timestamp"])
 
-        """Метод вызывается после завершения построения интерфейса"""
-        # Загружаем аватар из сохранённых данных
-        if self.store.exists("avatar"):
-            avatar = self.store.get("avatar")["path"]
-            self.selected_avatar = avatar
-            if self.root:
-                # Обновляем аватар только если root готов
-                self.root.ids.avatar.source = avatar
+        # """Метод вызывается после завершения построения интерфейса"""
+        # # Загружаем аватар из сохранённых данных
+        # if self.store.exists("avatar"):
+        #     avatar = self.store.get("avatar")["path"]
+        #     self.selected_avatar = avatar
+        #     if self.root:
+        #         # Обновляем аватар только если root готов
+        #         self.root.ids.avatar.source = avatar
 
 
     def login_user(self, identifier, password):
@@ -427,6 +426,7 @@ class App(MDApp):
 
     ############ МИКРОФОН ############
 
+
     def toggleRecording(self):
         """Toggle recording state"""
         if self.is_recording:
@@ -435,7 +435,9 @@ class App(MDApp):
             self.startRecording_clock()
 
     def startRecording_clock(self):
-        Clock.schedule_once(self.startRecording)
+        Clock.schedule_once(self.startRecording, 0)
+        Clock.schedule_interval(self.updateRecordingTime, 1)  # Обновляем время каждую секунду
+
 
     def startRecording(self, dt):
         self.r = MyRecorder()
@@ -444,6 +446,18 @@ class App(MDApp):
         button = self.root.ids.action_button
         button.icon = "assets/img/stop_record.png"
         self.root.ids.play_button.disabled = True  # Отключаем кнопку во время записи
+        self.recording_time = 0  # Начинаем отсчет времени
+        self.updateRecordingTime(dt)  # Обновляем текст времени сразу
+
+
+    def updateRecordingTime(self, dt):
+        """Обновляем время записи на экране"""
+        if self.is_recording:
+            self.recording_time += 1
+            minutes, seconds = divmod(self.recording_time, 60)
+            time_text = f"{minutes:02}:{seconds:02}"
+            self.root.ids.recording_time.text = time_text
+
 
     def stopRecording(self):
         self.r.mRecorder.stop()
@@ -452,6 +466,9 @@ class App(MDApp):
         self.is_recording = False
         button = self.root.ids.action_button
         button.icon = "assets/img/start_record.png"
+
+        # Отключаем обновление времени
+        Clock.unschedule(self.updateRecordingTime)
 
         # Активируем кнопку воспроизведения
         self.root.ids.play_button.disabled = False
@@ -463,7 +480,8 @@ class App(MDApp):
         self.root.ids.bottom_nav.switch_tab("screen 3")
 
         # Отправляем сообщение в чат
-        self.send_message("Запись завершена. Текст-заглушка от нейронной сети.")
+        self.send_message("""Транскрипция:\nТестовая запись раз два три""")
+        self.send_message("С вашей речью все в порядке")
 
     def playRecording(self):
         if not self.player:
@@ -519,7 +537,7 @@ class App(MDApp):
             cursor.close()
             conn.close()
 
-    def send_message(self, message="Текст-заглушка от нейронной сети", timestamp=None):
+    def send_message(self, message="Тестовая запись раз два три.", timestamp=None):
         """Отправляет сообщение в чат"""
         chat_list = self.root.ids.chat_list
 
@@ -559,65 +577,6 @@ class App(MDApp):
 
         # Сохраняем сообщения с ключом "messages"
         self.messages_json["messages"] = messages  # Используем этот способ записи
-
-    def show_avatar_selection(self):
-        """Открывает диалог для выбора аватара."""
-        if not self.dialog:
-            # Создаем прокручиваемую область
-            scroll = ScrollView(size_hint=(1, None), size=("500dp", "400dp"))
-
-            # Сетка для отображения аватаров
-            content = MDGridLayout(cols=2, spacing="30dp", size_hint_y=None)
-            content.bind(minimum_height=content.setter("height"))
-
-            # Загружаем список доступных аватаров
-            avatar_paths = [
-                               f"assets/img/avatars/{i}.png" for i in range(1, 12)
-                           ] + ["assets/img/avatars/account.png"]
-
-            for avatar_path in avatar_paths:
-                img = Image(
-                    source=avatar_path,
-                    size_hint=(None, None),
-                    size=("80dp", "80dp"),
-                    allow_stretch=True,
-                    keep_ratio=True
-                )
-                img.bind(
-                    on_touch_down=lambda instance, touch, path=avatar_path: self.select_avatar(instance, touch, path))
-                content.add_widget(img)
-
-            # Вставляем сетку в прокручиваемую область
-            scroll.add_widget(content)
-
-            # Диалоговое окно
-            self.dialog = MDDialog(
-                title="Выберите аватар",
-                type="custom",
-                content_cls=scroll,  # Прокручиваемая область
-                buttons=[
-                    MDFlatButton(
-                        text="Закрыть",
-                        on_release=lambda x: self.dialog.dismiss(),
-                    ),
-                ],
-            )
-        self.dialog.open()
-
-    def select_avatar(self, instance, touch, avatar_path):
-        """Обрабатывает выбор аватара."""
-        if instance.collide_point(*touch.pos):  # Проверяем, было ли нажатие на картинку
-            self.selected_avatar = avatar_path
-            if self.root:
-                self.root.ids.avatar.source = avatar_path  # Обновляем аватар в интерфейсе
-            self.save_selected_avatar()  # Сохраняем выбранный аватар
-            self.dialog.dismiss()
-
-    def save_selected_avatar(self):
-        """Сохраняет выбранный аватар."""
-        self.store.put("avatar", path=self.selected_avatar)
-        if self.root:
-            self.root.ids.avatar.source = self.selected_avatar  # Обновляем аватар в интерфейсе
 
 
 if __name__ == '__main__':

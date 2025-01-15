@@ -6,14 +6,18 @@
 
 import json
 import re
+from kivy.uix.image import Image
+
 import mysql.connector
 
 from kivy.lang import Builder
 from kivy.properties import BooleanProperty, StringProperty
 from kivy.storage.jsonstore import JsonStore
+from kivy.uix.scrollview import ScrollView
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.screen import MDScreen
 
 
@@ -61,13 +65,17 @@ class App(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.user_id = None
+        self.dialog = None
+        self.selected_avatar = "assets/img/avatars/account.png"  # По умолчанию
+        # Инициализация локального хранилища
+        self.store = JsonStore("user_data.json")
 
     def build(self):
 
         self.theme_cls.theme_style = "Light"
 
-        # Инициализация локального хранилища
-        self.store = JsonStore("user_data.json")
+        self.icon = "assets/img/icon.png"
+
 
         # Установить соединение с БД при запуске
         self.conn = mysql.connector.connect(
@@ -95,6 +103,17 @@ class App(MDApp):
             # Обновляем текст на экране Личного кабинета
             self.root.ids.screen_manager.get_screen('account').ids.username_label.text = self.username
             self.root.ids.screen_manager.get_screen('account').ids.useremail_label.text = self.email
+
+        """Метод вызывается после завершения построения интерфейса"""
+        # Загружаем аватар из сохранённых данных
+        if self.store.exists("avatar"):
+            avatar = self.store.get("avatar")["path"]
+            self.selected_avatar = avatar
+            if self.root:
+                # Обновляем аватар только если root готов
+                account_screen = self.root.ids.screen_manager.get_screen("account")
+                avatar = account_screen.ids.avatar
+                avatar.source = avatar
 
 
     def login_user(self, identifier, password):
@@ -242,6 +261,82 @@ class App(MDApp):
             self.theme_cls.theme_style = "Dark"
         else:  # Если переключатель не активен, включаем светлую тему
             self.theme_cls.theme_style = "Light"
+
+    def show_avatar_selection(self):
+        """Открывает диалог для выбора аватара."""
+        if self.dialog:
+            self.dialog.dismiss(force=True)
+            self.dialog = None
+
+        # Создаем прокручиваемую область
+        scroll = ScrollView(size_hint=(1, None), size=("500dp", "400dp"))
+
+        # Сетка для отображения аватаров
+        content = MDGridLayout(cols=2, spacing="30dp", size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
+
+        # Загружаем список доступных аватаров
+        avatar_paths = [
+                           f"assets/img/avatars/{i}.png" for i in range(1, 12)
+                       ] + ["assets/img/avatars/account.png"]
+
+        for avatar_path in avatar_paths:
+            img = Image(
+                source=avatar_path,
+                size_hint=(None, None),
+                size=("80dp", "80dp")
+            )
+            img.bind(
+                on_touch_down=lambda instance, touch, path=avatar_path: self.select_avatar(instance, touch, path)
+            )
+
+            content.add_widget(img)
+
+        # Убедитесь, что в ScrollView еще нет дочерних виджетов
+        if scroll.children:
+            scroll.clear_widgets()
+
+        # Вставляем сетку в прокручиваемую область
+        scroll.add_widget(content)
+
+        # Диалоговое окно
+        self.dialog = MDDialog(
+            title="Выберите аватар",
+            type="custom",
+            content_cls=scroll,  # Прокручиваемая область
+            buttons=[
+                MDFlatButton(
+                    text="Закрыть",
+                    on_release=lambda x: self.dialog.dismiss(),
+                ),
+            ],
+        )
+
+        self.dialog.open()
+
+    def select_avatar(self, instance, touch, avatar_path):
+        print(f"Выбрана картинка по пути: {avatar_path}")  # Для отладки
+        """Обрабатывает выбор аватара."""
+        if instance.collide_point(*touch.pos):  # Проверяем, было ли нажатие на картинку
+            self.selected_avatar = avatar_path
+            if self.root:
+                account_screen = self.root.ids.screen_manager.get_screen("account")
+                avatar = account_screen.ids.avatar
+                avatar.source = avatar_path
+            else:
+                print("Идентификатор avatar не найден в root.ids")
+                print(self.root.ids.screen_manager.get_screen("account").ids)
+
+            self.save_selected_avatar()  # Сохраняем выбранный аватар
+            self.dialog.dismiss()
+
+    def save_selected_avatar(self):
+        """Сохраняет выбранный аватар."""
+        self.store.put("avatar", path=self.selected_avatar)
+        if self.root:
+            account_screen = self.root.ids.screen_manager.get_screen("account")
+            avatar = account_screen.ids.avatar
+            avatar.source = self.selected_avatar  # Обновляем аватар в интерфейсе
 
 
 if __name__ == '__main__':

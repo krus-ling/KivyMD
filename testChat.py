@@ -160,15 +160,11 @@ class TestChatApp(MDApp):
         saved_messages = self.load_messages()
 
         if not saved_messages["message"]:
-            # Генерация 10 длинных сообщений, если их нет
-            for i in range(10):
-                message = (
-                    f"Длинное сообщение #{i + 1}. "
-                    f"Тестовая информация, чтобы проверить работу чата. "
-                    f"Это сообщение содержит много текста и может быть длинным."
-                )
-                timestamp = datetime.now().strftime("%H:%M")
-                self.send_message(message, timestamp)
+            message = (
+                "Тестовое сообщение раз два три."
+            )
+            timestamp = datetime.now().strftime("%H:%M")
+            self.send_message(message, timestamp)
         else:
             # Загрузка сохранённых сообщений
             for msg in reversed(saved_messages["message"]):
